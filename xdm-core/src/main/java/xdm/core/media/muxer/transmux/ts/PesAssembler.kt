@@ -10,10 +10,10 @@ import xdm.core.media.muxer.transmux.es.ElementaryStreamReader
 /**
  * Reassembles one elementary stream's PES packets from TS payload fragments. A PES begins at a
  * packet with payload_unit_start_indicator set and ends at the next one; on each boundary we parse
- * the PES header (PTS/DTS) and hand the payload to the [reader]. 33-bit timestamps are unwrapped to
- * a monotonic 64-bit timeline so the ~26.5h MPEG clock rollover doesn't corrupt durations.
+ * the PES header (PTS/DTS) and hand the payload to the [reader]. 33-bit timestamps go through the
+ * demuxer's [clock], shared by all its streams, so the ~26.5h MPEG clock rollover doesn't corrupt durations.
  */
-class PesAssembler(reader: ElementaryStreamReader) {
+class PesAssembler(reader: ElementaryStreamReader, private val clock: TimestampUnwrapper) {
     /** Replaced once when a stream identified by its content (see [TsDemuxer]) gets its real reader. */
     var reader: ElementaryStreamReader = reader
     private val buffer = ByteArrayBuilder(64 * 1024)
@@ -23,8 +23,9 @@ class PesAssembler(reader: ElementaryStreamReader) {
     var streamId = -1
         private set
 
-    private var wrapOffset = 0L
-    private var lastRef = -1L
+    /** Bytes of PES data this stream carried: a stream with data but no frames out was not understood. */
+    var bytesSeen = 0L
+        private set
 
     fun consumePacket(data: ByteArray, start: Int, end: Int, pusi: Boolean) {
         if (pusi) {
@@ -32,7 +33,27 @@ class PesAssembler(reader: ElementaryStreamReader) {
             buffer.reset()
             started = true
         }
-        if (started) buffer.write(data, start, end - start)
+        if (started) {
+            buffer.write(data, start, end - start); bytesSeen += end - start
+            // A bounded PES (PES_packet_length > 0) is handed on once complete, as ffmpeg's mpegts_push_data
+            // emits it; the rest until the next start is not payload. Which PES is complete first decides the
+            // wrap reference (TimestampUnwrapper), as ffmpeg's first packet out does.
+            if (buffer.size >= 6) {
+                val b = buffer.buffer
+                val packetLength = ((b[4].toInt() and 0xFF) shl 8) or (b[5].toInt() and 0xFF)
+                if (packetLength > 0 && buffer.size >= 6 + packetLength) endPes()
+            }
+        }
+    }
+
+    /**
+     * Hands the PES being collected to the reader now (the data before a discontinuity is complete) and
+     * waits for the next PES start: a continuation without one belongs to nothing that follows.
+     */
+    fun endPes() {
+        flush()
+        buffer.reset()
+        started = false
     }
 
     fun flush() {
@@ -43,8 +64,9 @@ class PesAssembler(reader: ElementaryStreamReader) {
         val streamId = b[3].toInt() and 0xFF
         this.streamId = streamId
 
-        // Streams without a PES header extension.
-        if (streamId == 0xBE || streamId == 0xBF) return
+        // Stream ids without a PES header extension (program_stream_map, padding, private_stream_2, ECM,
+        // EMM, DSMCC, H.222.1 type E, directory): their payload starts at byte 6, and none is audio or video.
+        if (streamId in NO_HEADER_EXTENSION) return
 
         val ptsDtsFlags = (b[7].toInt() and 0xC0) shr 6
         val headerDataLength = b[8].toInt() and 0xFF
@@ -54,23 +76,18 @@ class PesAssembler(reader: ElementaryStreamReader) {
             pts = readTimestamp(b, 9)
             if (ptsDtsFlags == 3) dts = readTimestamp(b, 14)
         }
-        val ref = if (dts >= 0) dts else pts
-        if (ref >= 0) {
-            if (lastRef >= 0 && lastRef - ref > (1L shl 32)) wrapOffset += (1L shl 33)
-            lastRef = ref
-            if (pts >= 0) pts += wrapOffset
-            if (dts >= 0) dts += wrapOffset
-            // Near the rollover a reordered frame's PTS can wrap before its DTS does (PTS 3502 with
-            // DTS 2^33 - 3600): it is still later than the DTS, so it takes the next wrap too.
-            if (pts >= 0 && dts >= 0 && dts - pts > (1L shl 32)) pts += (1L shl 33)
-        }
+        // DTS first: ffmpeg takes the wrap reference from a packet's DTS, else its PTS.
+        dts = clock.unwrap(dts)
+        pts = clock.unwrap(pts)
 
         // A bounded PES (PES_packet_length > 0) ends there, as in ffmpeg: anything after it is not payload.
         val packetLength = ((b[4].toInt() and 0xFF) shl 8) or (b[5].toInt() and 0xFF)
         val end = if (packetLength > 0) minOf(buffer.size, 6 + packetLength) else buffer.size
         val payloadOffset = 9 + headerDataLength
         if (payloadOffset >= end) return
-        reader.consume(b, payloadOffset, end - payloadOffset, pts, if (dts >= 0) dts else pts)
+        // dts -1: the PES carried only a PTS (DTS = PTS by the spec; the video readers infer it when
+        // frames are reordered, see DtsInference).
+        reader.consume(b, payloadOffset, end - payloadOffset, pts, dts)
     }
 
     private fun readTimestamp(b: ByteArray, o: Int): Long {
@@ -79,5 +96,9 @@ class PesAssembler(reader: ElementaryStreamReader) {
             ((b[o + 2].toLong() and 0xFE) shl 14) or
             ((b[o + 3].toLong() and 0xFF) shl 7) or
             ((b[o + 4].toLong() and 0xFE) shr 1))
+    }
+
+    private companion object {
+        val NO_HEADER_EXTENSION = setOf(0xBC, 0xBE, 0xBF, 0xF0, 0xF1, 0xF2, 0xF8, 0xFF)
     }
 }

@@ -32,11 +32,23 @@ class MpegVideoReader(private val sink: SampleSink, private val mpeg4: Boolean) 
     private var unitDts = NO_TS
     private var pesPts = NO_TS
     private var pesDts = NO_TS
+    /** Whether the PES (unit, picture) carried a DTS of its own, not just a PTS. */
+    private var pesDtsGiven = false
+    private var unitDtsGiven = false
+    private var dtsGiven = false
+    private val dtsInference by lazy { DtsInference(track.samples) }
 
     // ---- picture being assembled ----
     private val picture = ByteArrayBuilder(256 * 1024)
     private var hasPicture = false
     private var keyframe = false
+    /** Sections so far ([sectionStart]), the section the current picture began in, and the last one opened by an I-picture. */
+    private var section = 0
+    private var pictureSection = 0
+    private var keyframeSection = -1
+    /** Pictures dropped before the first I-picture. */
+    var droppedLeading = 0
+        private set
     private var pts = NO_TS
     private var dts = NO_TS
     /** Bytes of [picture] before its picture/VOP start code: stream headers, if it begins with them. */
@@ -44,6 +56,8 @@ class MpegVideoReader(private val sink: SampleSink, private val mpeg4: Boolean) 
 
     private var lastPts = NO_TS
     private var lastDts = NO_TS
+    /** A picture with a PES timestamp has been written. */
+    private var timed = false
     private var lastInterval = 0L
     private var descriptionIndex = 1
     private var config: ByteArray? = null
@@ -52,6 +66,7 @@ class MpegVideoReader(private val sink: SampleSink, private val mpeg4: Boolean) 
         if (pts >= 0) {
             pesPts = pts
             pesDts = if (dts >= 0) dts else pts
+            pesDtsGiven = dts >= 0
         }
         var scanFrom = maxOf(0, pending.size - 3)
         pending.write(data, offset, length)
@@ -65,7 +80,7 @@ class MpegVideoReader(private val sink: SampleSink, private val mpeg4: Boolean) 
             synced = true
             unitStart = sc
             scanFrom = sc + 3
-            unitPts = pesPts; unitDts = pesDts
+            unitPts = pesPts; unitDts = pesDts; unitDtsGiven = pesDtsGiven
             pesPts = NO_TS; pesDts = NO_TS
         }
         if (unitStart < 0) pending.compact(maxOf(0, end - 3)) else pending.compact(unitStart)
@@ -76,6 +91,8 @@ class MpegVideoReader(private val sink: SampleSink, private val mpeg4: Boolean) 
         if (synced && pending.size > 4) onUnit(pending.buffer, 0, pending.size)
         pending.reset()
         emitPicture()
+        dtsInference.finish()
+        if (dtsInference.inferred > 0) Logger.info("XDM", "${track.codec}: decode times inferred for ${dtsInference.inferred} pictures (PES without a usable DTS)")
     }
 
     /** One unit, `00 00 01 code ...` in [b] from [s] to [e]. */
@@ -85,11 +102,12 @@ class MpegVideoReader(private val sink: SampleSink, private val mpeg4: Boolean) 
         // Stream headers (sequence/GOP, VOS/VO/VOL/GOV) after a picture open the next picture's unit.
         val isHeader = if (mpeg4) code == 0xB0 || code == 0xB3 || code == 0xB5 || code <= 0x2F else code == 0xB3 || code == 0xB8
         if ((isPicture || isHeader) && hasPicture) emitPicture()
-        if (unitPts != NO_TS && pts == NO_TS) { pts = unitPts; dts = unitDts }
+        if (unitPts != NO_TS && pts == NO_TS) { pts = unitPts; dts = unitDts; dtsGiven = unitDtsGiven }
         unitPts = NO_TS; unitDts = NO_TS
         if (picture.size == 0) headerBytes = if (isPicture) -1 else 0
         if (isPicture) {
             if (headerBytes == 0) headerBytes = picture.size
+            if (!hasPicture) pictureSection = section
             hasPicture = true
             if (e - s > 5) {
                 keyframe = if (mpeg4) ((b[s + 4].toInt() shr 6) and 3) == 0     // vop_coding_type I
@@ -99,27 +117,47 @@ class MpegVideoReader(private val sink: SampleSink, private val mpeg4: Boolean) 
         picture.write(b, s, e - s)
     }
 
+    /** As for H.264/H.265: the unit and picture fed so far are the section before's, written now. */
+    override fun sectionStart() {
+        if (synced && pending.size > 4) onUnit(pending.buffer, 0, pending.size)
+        pending.reset()
+        emitPicture()
+        section++
+    }
+
     private fun emitPicture() {
         if (!hasPicture) { picture.reset(); return }
         if (headerBytes > 0) updateConfig(picture.buffer.copyOf(headerBytes))
-        if (config != null) {
+        // Pictures before the first I-picture of their section (the stream's start, or after a
+        // discontinuity) are dropped, as ffmpeg's stream copy drops non-keyframes at the start.
+        val opened = pictureSection == keyframeSection
+        if (config != null && !opened && !keyframe) droppedLeading++
+        if (config != null && (opened || keyframe)) {
+            keyframeSection = pictureSection
             var p = pts
             var d = dts
+            val real = p != NO_TS
             if (p == NO_TS) {
                 val step = if (lastInterval > 0) lastInterval else 3600L
                 d = if (lastDts != NO_TS) lastDts + step else 0
                 p = if (lastPts != NO_TS) d + (lastPts - lastDts) else d
             }
-            if (lastDts != NO_TS && d > lastDts) lastInterval = d - lastDts
+            if (real && !timed && track.samples.size > 0) {
+                // Pictures before the stream's first timestamp: placed back from it.
+                backFillLeading(track.samples, track.samples.size, d, 3600L)
+            } else if (lastDts != NO_TS && d > lastDts) lastInterval = d - lastDts
+            if (real) timed = true
             lastPts = p; lastDts = d
             val at = sink.writeSampleData(picture.buffer, 0, picture.size)
             track.samples.add(at, picture.size, p, d, keyframe, descriptionIndex)
+            if (real) dtsInference.added(track.samples.size - 1, p, d, dtsGiven, pictureSection)
+            else { track.guessedTimestamps++; dtsInference.interrupted() }
         }
         // Pictures before the first stream header can't be decoded: dropped.
         picture.reset()
         hasPicture = false
         keyframe = false
-        pts = NO_TS; dts = NO_TS
+        pts = NO_TS; dts = NO_TS; dtsGiven = false
         headerBytes = -1
     }
 

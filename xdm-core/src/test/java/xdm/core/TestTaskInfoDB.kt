@@ -105,6 +105,19 @@ class TestTaskInfoDB : HttpDownloadTestBase() {
     }
 
     @Test
+    fun hls_keepOriginalFormatIsSavedAndOffByDefault() {
+        val task = HlsDownloadTaskInfo(
+            id = 4, fileName = "t.ts", tempDir = "/tmp/t", respectFileName = false, cookie = null, headers = null,
+            origin = null, categoryId = null, targetFolder = "/downloads", maxPiece = 0, authInfo = null,
+            url = "https://cdn.example.com/v.m3u8", audioUrl = null, independent = false,
+        )
+        db().saveHlsTask(task)
+        assertEquals(false, db().getHlsTask(4)!!.keepOriginalFormat, "off unless chosen")
+        db().saveHlsTask(task.copy(keepOriginalFormat = true))
+        assertEquals(true, db().getHlsTask(4)!!.keepOriginalFormat, "kept as chosen")
+    }
+
+    @Test
     fun dash_roundTripKeepsCookieHeadersOriginAndFolder() {
         val task = DashDownloadTaskInfo(
             id = 3, fileName = "d.mp4", tempDir = "/tmp/d", respectFileName = false,

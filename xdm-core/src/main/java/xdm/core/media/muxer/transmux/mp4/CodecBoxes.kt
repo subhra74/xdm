@@ -15,6 +15,7 @@ object CodecBoxes {
         val spsList = track.parameterSets.filter { (it[0].toInt() and 0x1F) == 7 }
         val ppsList = track.parameterSets.filter { (it[0].toInt() and 0x1F) == 8 }
         val sps = spsList.firstOrNull() ?: ByteArray(4)
+        val spsExt = track.parameterSets.filter { (it[0].toInt() and 0x1F) == 13 }
         buf.box("avcC") {
             u8(1)                       // configurationVersion
             u8(sps[1].toInt() and 0xFF) // AVCProfileIndication
@@ -30,7 +31,8 @@ object CodecBoxes {
                 u8(0xFC or (track.chromaFormat and 3))
                 u8(0xF8 or ((track.bitDepthLuma - 8) and 7))
                 u8(0xF8 or ((track.bitDepthChroma - 8) and 7))
-                u8(0)                   // numOfSequenceParameterSetExt
+                u8(spsExt.size)         // numOfSequenceParameterSetExt (alpha planes)
+                for (e in spsExt) { u16(e.size); bytes(e) }
             }
         }
     }
@@ -40,12 +42,29 @@ object CodecBoxes {
         val vps = track.parameterSets.filter { ((it[0].toInt() shr 1) and 0x3F) == 32 }
         val sps = track.parameterSets.filter { ((it[0].toInt() shr 1) and 0x3F) == 33 }
         val pps = track.parameterSets.filter { ((it[0].toInt() shr 1) and 0x3F) == 34 }
-        val spsNal = sps.firstOrNull()
-        val rbsp = if (spsNal != null) NalUnitUtil.unescapeRbsp(spsNal, 2, spsNal.size - 2) else ByteArray(13)
-        val profileByte = rbsp.getOrElse(1) { 0 }.toInt() and 0xFF
-        val compat = ByteArray(4) { rbsp.getOrElse(2 + it) { 0 } }
-        val constraints = ByteArray(6) { rbsp.getOrElse(6 + it) { 0 } }
-        val levelIdc = rbsp.getOrElse(12) { 0 }.toInt() and 0xFF
+        // General profile/tier/level merged over the VPS and every SPS, as ffmpeg does (hvcc_update_ptl):
+        // highest tier and profile, the level of the highest tier, compatibility and constraint flags
+        // only where all of them set them. The PTL starts at RBSP byte 4 of a VPS and byte 1 of an SPS.
+        var profileSpace = 0; var tier = 0; var profileIdc = 0; var levelIdc = 0
+        val compat = ByteArray(4) { -1 }
+        val constraints = ByteArray(6) { -1 }
+        var merged = 0
+        for ((nal, at) in vps.map { it to 4 } + sps.map { it to 1 }) {
+            val rbsp = NalUnitUtil.unescapeRbsp(nal, 2, nal.size - 2)
+            if (rbsp.size < at + 12) continue
+            val b0 = rbsp[at].toInt() and 0xFF
+            val t = (b0 shr 5) and 1
+            val level = rbsp[at + 11].toInt() and 0xFF
+            profileSpace = b0 shr 6
+            levelIdc = if (tier < t) level else maxOf(levelIdc, level)
+            tier = maxOf(tier, t)
+            profileIdc = maxOf(profileIdc, b0 and 0x1F)
+            for (k in 0 until 4) compat[k] = (compat[k].toInt() and rbsp[at + 1 + k].toInt()).toByte()
+            for (k in 0 until 6) constraints[k] = (constraints[k].toInt() and rbsp[at + 5 + k].toInt()).toByte()
+            merged++
+        }
+        if (merged == 0) { compat.fill(0); constraints.fill(0) }
+        val profileByte = (profileSpace shl 6) or (tier shl 5) or profileIdc
 
         buf.box("hvcC") {
             u8(1)                       // configurationVersion
@@ -65,8 +84,9 @@ object CodecBoxes {
             val arrays = listOf(32 to vps, 33 to sps, 34 to pps).filter { it.second.isNotEmpty() }
             u8(arrays.size)
             for ((type, list) in arrays) {
-                // array_completeness 0: hev1 keeps parameter sets in-band too (ffmpeg writes 0 for hev1).
-                u8(type)
+                // array_completeness 1, as hvc1 asks (and ffmpeg writes with -tag:v hvc1): every set of
+                // this config is in the array. The same sets also stay in the samples.
+                u8(0x80 or type)
                 u16(list.size)
                 for (n in list) { u16(n.size); bytes(n) }
             }
@@ -153,6 +173,83 @@ object CodecBoxes {
             }
             descriptor(0x06, 1)         // SLConfigDescriptor
             u8(0x02)
+        }
+    }
+
+    /** Offset of the DecoderConfigDescriptor's bufferSizeDB in [entry]'s esds, or -1 without one. */
+    private fun esdsRatesAt(entry: ByteArray): Int {
+        var e = -1
+        for (k in 4 until entry.size - 4) {
+            if (entry[k] == 'e'.code.toByte() && entry[k + 1] == 's'.code.toByte() && entry[k + 2] == 'd'.code.toByte() && entry[k + 3] == 's'.code.toByte()) { e = k; break }
+        }
+        if (e < 0) return -1
+        var p = e + 8 // fourcc, version/flags
+        fun descriptor(tag: Int): Boolean {
+            if (p >= entry.size || (entry[p].toInt() and 0xFF) != tag) return false
+            p++
+            var n = 0
+            while (n < 4 && p < entry.size) { val b = entry[p++].toInt(); n++; if (b and 0x80 == 0) break }
+            return true
+        }
+        if (!descriptor(0x03)) return -1
+        if (p + 3 > entry.size) return -1
+        val flags = entry[p + 2].toInt() and 0xFF
+        p += 3
+        if (flags and 0x80 != 0) p += 2
+        if (flags and 0x40 != 0 && p < entry.size) p += 1 + (entry[p].toInt() and 0xFF)
+        if (flags and 0x20 != 0) p += 2
+        if (!descriptor(0x04)) return -1
+        val at = p + 2 // objectTypeIndication, streamType
+        return if (at + 11 <= entry.size) at else -1
+    }
+
+    /** Whether [entry] has an esds with bufferSizeDB, maxBitrate and avgBitrate all 0. */
+    fun esdsRatesUnset(entry: ByteArray): Boolean {
+        val at = esdsRatesAt(entry)
+        return at >= 0 && (0 until 11).all { entry[at + it].toInt() == 0 }
+    }
+
+    /** [entry] with [rates] in its esds, when it has one without them; else [entry] itself. */
+    fun withEsdsRates(entry: ByteArray, rates: EsdsRates): ByteArray {
+        if (!esdsRatesUnset(entry)) return entry
+        val at = esdsRatesAt(entry)
+        val out = entry.copyOf()
+        fun put(v: Long, n: Int, o: Int) { for (k in 0 until n) out[o + k] = (v ushr (8 * (n - 1 - k))).toByte() }
+        put(minOf(rates.bufferSize, 0xFFFFFFL), 3, at)
+        put(minOf(rates.max, 0xFFFFFFFFL), 4, at + 3)
+        put(minOf(rates.avg, 0xFFFFFFFFL), 4, at + 7)
+        return out
+    }
+}
+
+/**
+ * esds rates of a track: average over its duration, the most bits in any whole second of decode time,
+ * and the largest sample (bufferSizeDB, bytes). One pass over the sample table; no per-sample state.
+ */
+class EsdsRates(val avg: Long, val max: Long, val bufferSize: Long) {
+    companion object {
+        fun of(t: xdm.core.media.muxer.transmux.sample.Track): EsdsRates {
+            val s = t.samples
+            if (s.size == 0 || t.timescale <= 0) return EsdsRates(0, 0, 0)
+            var total = 0L
+            var duration = 0L
+            var largest = 0L
+            var bucket = Long.MIN_VALUE
+            var bucketBytes = 0L
+            var maxBytes = 0L
+            for (i in 0 until s.size) {
+                val size = s.sampleSize(i).toLong()
+                total += size
+                duration += s.duration(i)
+                largest = maxOf(largest, size)
+                val b = Math.floorDiv(s.dts(i), t.timescale.toLong())
+                if (b != bucket) { maxBytes = maxOf(maxBytes, bucketBytes); bucket = b; bucketBytes = 0 }
+                bucketBytes += size
+            }
+            maxBytes = maxOf(maxBytes, bucketBytes)
+            val avg = if (duration > 0) total * 8 * t.timescale / duration else 0
+            // A stream shorter than a second: its one bucket is not a full second's worth.
+            return EsdsRates(avg, maxOf(avg, if (duration >= t.timescale) maxBytes * 8 else avg), largest)
         }
     }
 }

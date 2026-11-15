@@ -12,6 +12,7 @@ import xdm.core.downloaders.DownloadType
 import xdm.core.downloaders.ExtractorSource
 import xdm.core.downloaders.TaskInfoDB
 import xdm.core.downloaders.web.SegmentProgress
+import xdm.core.downloaders.web.SlotProgress
 import xdm.core.media.muxer.Muxer
 import xdm.core.network.http.CertTrust
 import xdm.core.network.http.HttpAuth
@@ -159,6 +160,8 @@ interface UiSink {
         eta: Long,
         progress: Int,
         segments: Collection<SegmentProgress>,
+        /** The connection slots for the table under the bar; empty while assembling (keep the last ones). */
+        slots: List<SlotProgress> = emptyList(),
         /** A batch's file counts; null for other downloads. */
         files: BatchFileCounts? = null,
     )

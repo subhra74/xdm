@@ -87,7 +87,7 @@ class TestTsProbing {
 
     /**
      * Runs [edit] on each PMT section start (section offset, ES-loop start, section end without CRC).
-     * The CRC isn't updated: the demuxer doesn't check it.
+     * The CRC is rewritten after [edit].
      */
     private fun eachPmt(b: ByteArray, edit: (p: Int, loop: Int, end: Int) -> Unit) {
         val pmt = pmtPid(b)
@@ -97,6 +97,7 @@ class TestTsProbing {
             val sectionLength = ((b[p + 1].toInt() and 0x0F) shl 8) or (b[p + 2].toInt() and 0xFF)
             val programInfo = ((b[p + 10].toInt() and 0x0F) shl 8) or (b[p + 11].toInt() and 0xFF)
             edit(p, p + 12 + programInfo, p + 3 + sectionLength - 4)
+            fixSectionCrc(b, p)
         }
     }
 
@@ -162,6 +163,15 @@ class TestTsProbing {
         return text
     }
 
+    /** codec_type of each stream of [path], in file order. */
+    private fun streamTypes(path: String): List<String> {
+        val p = ProcessBuilder(which("ffprobe")!!, "-v", "error", "-show_entries", "stream=codec_type", "-of", "csv=p=0", path)
+            .redirectErrorStream(true).start()
+        val text = p.inputStream.readBytes().toString(Charsets.UTF_8)
+        p.waitFor()
+        return text.lines().map { it.substringBefore(",").trim() }.filter { it.isNotEmpty() }
+    }
+
     private fun assertSameMedia(reference: String, actual: String, label: String, audio: Boolean = true) {
         val v = md5(reference, "v")
         assert(v.isNotEmpty()) { "$label: reference has no video" }
@@ -186,6 +196,9 @@ class TestTsProbing {
                 val out = File(workDir, "${codec}_${type}.mp4").absolutePath
                 assert(mux(patched(fixture("$codec.ts"), "${codec}_$type.ts", type), out)) { "$label: mux failed" }
                 assertSameMedia(ref, out, label)
+                // The PMT lists the video first: so does the output (ffmpeg creates its streams from the
+                // PMT), although the audio was identified first.
+                assertEquals(listOf("video", "audio"), streamTypes(out), "$label: track order")
             }
         }
     }
@@ -202,7 +215,9 @@ class TestTsProbing {
         val teletext = File(workDir, "h264_teletext.mp4").absolutePath
         assert(mux(patched(fixture("h264.ts"), "h264_teletext.ts", 0x06, byteArrayOf(0x56, 5, 'e'.code.toByte(), 'n'.code.toByte(), 'g'.code.toByte(), 0x09, 0)), teletext)) { "mux failed" }
         assertEquals("", md5(teletext, "v"), "a stream marked as teletext was muxed as video")
-        assertEquals(md5(ref, "a"), md5(teletext, "a"), "audio differs")
+        // Against the source's audio: with video, the reference starts at the first video frame and
+        // skips the audio before it; audio alone keeps all of it.
+        assertEquals(md5(fixture("h264.ts").absolutePath, "a"), md5(teletext, "a"), "audio differs")
     }
 
     @Test
@@ -256,6 +271,13 @@ class TestTsProbing {
         assertEquals(StreamReader.MPEG_VIDEO, EsProbe.identify(mpeg2, 0, mpeg2.size, video))
         assertEquals(StreamReader.MPEG4_VISUAL, EsProbe.identify(mpeg4, 0, mpeg4.size, video), "B3 + B6 is MPEG-4's GOV, not MPEG-2")
         assertNull(EsProbe.identify(mpeg2Picture, 0, mpeg2Picture.size, video), "an MPEG-2 picture taken for a NAL stream")
+        // AV1 (no emulation prevention) opens with an OBU header; a VOP or sequence start code later in its
+        // data is chance, not MPEG-4 or MPEG-2 video.
+        val av1 = bytes(0x0A, 0x0C, 0x02, 0x00, 0x00, 0x0D, 0x26, 0x27, 0, 0, 1, 0xB6, 0x51, 0, 0, 1, 0xB3, 0x22)
+        assertNull(EsProbe.identify(av1, 0, av1.size, video), "AV1 taken for MPEG-4/MPEG-2 video")
+        // Zero stuffing before the first start code still counts as opening with it.
+        val stuffed = byteArrayOf(0) + mpeg4
+        assertEquals(StreamReader.MPEG4_VISUAL, EsProbe.identify(stuffed, 0, stuffed.size, video))
         // Audio sync words still win on an audio stream_id.
         val adts = bytes(0xFF, 0xF1, 0x50, 0x80, 0x01, 0x7F, 0xFC, 0x21)
         assertEquals(StreamReader.ADTS, EsProbe.identify(adts, 0, adts.size, 0xC0))

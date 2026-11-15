@@ -91,7 +91,7 @@ class HlsDownloaderTask : StreamingDownloaderTask {
         config: CoreConfig
     ) : super(
         makeContext(taskInfo, http, host, configDir), configDir, muxer, config, taskInfo.maxPiece,
-        taskInfo.subtitles.firstOrNull()
+        taskInfo.subtitles.firstOrNull(), taskInfo.keepOriginalFormat
     ) {
         subtitleUrl = taskInfo.subtitles.firstOrNull()?.playlistUrl
     }

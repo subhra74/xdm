@@ -1,5 +1,6 @@
 package xdm.app.utils
 
+import com.formdev.flatlaf.util.UIScale
 import xdm.app.AppContext
 import xdm.app.OS
 import xdm.app.ui.screens.AppWindow
@@ -23,6 +24,7 @@ import javax.swing.JPopupMenu
 import javax.swing.JTable
 import javax.swing.SwingConstants
 import javax.swing.SwingUtilities
+import javax.swing.UIManager
 import javax.swing.border.Border
 import javax.swing.border.CompoundBorder
 import javax.swing.border.EmptyBorder
@@ -193,13 +195,35 @@ fun dialogHeight(preferred: Int): Int {
 /**
  * Gives every column's header and cells [pad] px of room on the left and right, and aligns each header like
  * its column's cells (a right-aligned number column gets a right-aligned header) instead of centring it.
+ * Header text lines up with the cell text below it: the theme's own header margins (`TableHeader.cellMargins`)
+ * differ from the cells' (`Table.cellMargins`), so the header's padding makes up the difference.
  * Call once, after the table's own cell renderers are set.
  */
 fun JTable.padColumns(pad: Int = 8) {
     val padding = EmptyBorder(0, pad.px, 0, pad.px)
+    // The cells' own border insets, from the last cell drawn; until then the theme's cell margins.
+    var cellInsets: Insets? = null
+    fun ownBorder(c: JComponent): Border? = (c.border as? PaddedBorder)?.outsideBorder ?: c.border
+
     // Renderers set their border on every call, so the padding goes around whatever they set (never twice).
     fun padded(c: Component): Component {
-        (c as? JComponent)?.let { it.border = PaddedBorder((it.border as? PaddedBorder)?.outsideBorder ?: it.border, padding) }
+        (c as? JComponent)?.let {
+            val own = ownBorder(it)
+            if (cellInsets == null) cellInsets = own?.getBorderInsets(it)
+            it.border = PaddedBorder(own, padding)
+        }
+        return c
+    }
+
+    fun paddedHeader(c: Component): Component {
+        (c as? JComponent)?.let {
+            val own = ownBorder(it)
+            val ownInsets = own?.getBorderInsets(it) ?: Insets(0, 0, 0, 0)
+            val cell = cellInsets ?: UIScale.scale(UIManager.getInsets("Table.cellMargins") ?: Insets(0, 0, 0, 0))
+            val left = max(0, pad.px + cell.left - ownInsets.left)
+            val right = max(0, pad.px + cell.right - ownInsets.right)
+            it.border = PaddedBorder(own, EmptyBorder(0, left, 0, right))
+        }
         return c
     }
 
@@ -217,12 +241,13 @@ fun JTable.padColumns(pad: Int = 8) {
     val header = tableHeader.defaultRenderer
     bases += header
     tableHeader.defaultRenderer = TableCellRenderer { t, value, sel, focus, row, col ->
-        padded(header.getTableCellRendererComponent(t, value, sel, focus, row, col)).also {
+        paddedHeader(header.getTableCellRendererComponent(t, value, sel, focus, row, col)).also {
             (it as? JLabel)?.horizontalAlignment = align.getOrElse(col) { SwingConstants.LEADING }
         }
     }
     // The wrappers are not Components, so a theme change would not reach the labels they wrap.
     val refresh = java.beans.PropertyChangeListener {
+        cellInsets = null
         bases.forEach { b -> (b as? Component)?.let(SwingUtilities::updateComponentTreeUI) }
     }
     addPropertyChangeListener("UI", refresh)

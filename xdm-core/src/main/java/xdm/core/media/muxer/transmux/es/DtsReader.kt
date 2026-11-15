@@ -22,7 +22,7 @@ import xdm.core.util.Logger
 class DtsReader(private val sink: SampleSink) : ElementaryStreamReader {
     override val track = Track(Codec.DTS)
 
-    private val clock = FrameClock()
+    private val clock = FrameClock(track.samples)
     private var configured = false
     private var rate = 0
     private var descriptionIndex = 1

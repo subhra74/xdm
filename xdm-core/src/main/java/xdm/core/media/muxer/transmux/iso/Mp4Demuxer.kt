@@ -219,6 +219,7 @@ class Mp4Demuxer(private val sink: SampleSink) {
             }
         } ?: run {
             val track = Track(if (isVideo) Codec.OTHER_VIDEO else Codec.OTHER_AUDIO)
+            track.compositionMayPrecedeDecode = true
             track.timescale = inputTimescale
             track.width = width
             track.height = height
@@ -429,6 +430,7 @@ class Mp4Demuxer(private val sink: SampleSink) {
             state.track.samples.add(
                 outOffset, sz, state.scale(dts + cto + state.editShift), state.scale(dts + state.editShift), isKey, descriptionIndex
             )
+            if (dur > 0) state.track.samples.lastDuration = state.scale(dur)
             dts += dur
             filePos += sz
         }
@@ -537,6 +539,7 @@ class Mp4Demuxer(private val sink: SampleSink) {
             track.samples.add(
                 outOffset, sizes[i], state.scale(dts + cto + state.editShift), state.scale(dts + state.editShift), isKey, sampleEntryIndex[i]
             )
+            if (dur > 0) track.samples.lastDuration = state.scale(dur.toLong())
             dts += dur
             sttsRem--
         }

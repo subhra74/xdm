@@ -55,7 +55,21 @@ class TestFallbackLadder {
             run(ffmpeg!!, *q, *v, *a, "-t", "4", *h264, "-c:a", "aac",
                 "-f", "hls", "-hls_time", "1", "-hls_segment_type", "fmp4", "-hls_list_size", "0",
                 "-hls_fmp4_init_filename", "fm_init.mp4", "-hls_segment_filename", File(workDir, "fm%d.m4s").path, File(workDir, "fm.m3u8").path)
+            // AV1 + AAC in TS: ffmpeg writes AV1 as a private stream (type 0x06) with no descriptor.
+            runSoft(ffmpeg!!, *q, *v, *a, "-t", "4", "-c:v", "libsvtav1", "-preset", "12", "-g", "25", "-c:a", "aac",
+                "-f", "hls", "-hls_time", "2", "-hls_list_size", "0", "-hls_segment_filename", File(workDir, "av1_%d.ts").path, File(workDir, "av1.m3u8").path)
+            // x264 open GOP: only the first segment's keyframe is an IDR with SPS/PPS before it; the
+            // later ones open with a recovery-point I picture and no parameter sets.
+            run(ffmpeg!!, *q, *v, *a, "-t", "4", *h264, "-bf", "3", "-x264-params", "open-gop=1", "-c:a", "aac",
+                "-f", "hls", "-hls_time", "1", "-hls_list_size", "0",
+                "-hls_segment_filename", File(workDir, "ogop%d.ts").path, File(workDir, "ogop.m3u8").path)
+            // VP8 + Vorbis (no MP4 sample entry for either) in standalone WebM segments.
+            runSoft(ffmpeg!!, *q, *v, *a, "-t", "4", "-c:v", "libvpx", "-b:v", "500k", "-g", "25", "-c:a", "vorbis", "-strict", "-2", "-ac", "2",
+                "-f", "segment", "-segment_time", "2", "-segment_format", "webm", File(workDir, "wm%d.webm").path)
         }
+
+        /** For codecs an ffmpeg build may lack: the test that needs them checks for the files. */
+        private fun runSoft(vararg cmd: String) = try { run(*cmd) } catch (_: IllegalStateException) {}
 
         private fun which(cmd: String): String? {
             val path = System.getenv("PATH") ?: return null
@@ -216,6 +230,51 @@ class TestFallbackLadder {
         assertEquals(OutputKind.REMUXED, m.outputKind)
         val tags = probe(out, "-show_entries", "stream=codec_tag_string", "-of", "csv=p=0").lines()
         assertEquals(listOf("avc1", "zzzz"), tags, "both tracks, the unknown one copied as it is")
+    }
+
+    @Test
+    fun av1InTsIsNotLostToAnAudioOnlyRemux() {
+        requireFfmpeg()
+        val segments = files("av1_\\d+\\.ts")
+        Assumptions.assumeTrue(segments.isNotEmpty(), "ffmpeg without libsvtav1")
+        val out = path("av1_out.mp4")
+        val m = TransmuxingMuxer("/nonexistent-appdir", "mp4")
+        assert(m.mux(segments, out, {}, workDir.path, false, false)) { "mux failed: ${m.lastError}" }
+        // The AV1 stream can't be read from TS: the segments are joined (it stays in the file), not
+        // remuxed into an MP4 without it.
+        assertEquals(OutputKind.TS_FALLBACK, m.outputKind)
+        assertArrayEquals(segments.map { File(it).readBytes() }.reduce { x, y -> x + y }, File(out).readBytes(), "not the segments joined")
+    }
+
+    @Test
+    fun videoWithoutParameterSetsIsNotLostToAnAudioOnlyRemux() {
+        requireFfmpeg()
+        // Segments 1-3 only: the video's SPS/PPS were in segment 0.
+        val segments = files("ogop\\d+\\.ts").drop(1)
+        assertEquals(3, segments.size, "segments 1-3")
+        val out = path("ogop_out.mp4")
+        val m = TransmuxingMuxer("/nonexistent-appdir", "mp4")
+        assert(m.mux(segments, out, {}, workDir.path, false, false)) { "mux failed: ${m.lastError}" }
+        // ffmpeg fails such a remux ("dimensions not set"); an MP4 with the audio alone would pass as a
+        // good one. The segments are joined: a player that reads in-band parameter sets plays them.
+        assertEquals(OutputKind.TS_FALLBACK, m.outputKind)
+        assertEquals(listOf("h264", "aac"), codecs(out))
+    }
+
+    @Test
+    fun codecsMp4CantCarryAreWrittenAsMkvWhenMp4IsAsked() {
+        requireFfmpeg()
+        val segments = files("wm\\d+\\.webm")
+        Assumptions.assumeTrue(segments.isNotEmpty(), "ffmpeg without libvpx / the vorbis encoder")
+        val out = path("wm_out.mp4")
+        val m = TransmuxingMuxer("/nonexistent-appdir", "mp4")
+        assert(m.mux(segments, out, {}, workDir.path, false, false)) { "mux failed: ${m.lastError}" }
+        assertEquals("mkv", m.outputContainer, "VP8/Vorbis have no MP4 sample entry: Matroska instead")
+        assertEquals(OutputKind.REMUXED, m.outputKind)
+        assertEquals(listOf("vp8", "vorbis"), codecs(out))
+        assertEquals(segments.sumOf { packets(it)["vp8"]!! }, packets(out)["vp8"], "every video frame")
+        assertEquals(segments.sumOf { packets(it)["vorbis"]!! }, packets(out)["vorbis"], "every audio frame")
+        assertEquals(emptyList<String>(), decodeErrors(out))
     }
 
     @Test

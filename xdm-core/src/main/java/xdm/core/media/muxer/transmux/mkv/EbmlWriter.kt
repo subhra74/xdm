@@ -39,6 +39,7 @@ object Ebml {
     const val CODEC_DELAY = 0x56AAL
     const val SEEK_PRE_ROLL = 0x56BBL
     const val LANGUAGE = 0x22B59CL
+    const val FLAG_DEFAULT = 0x88L
     const val CODEC_ID = 0x86L
     const val CODEC_PRIVATE = 0x63A2L
     const val VIDEO = 0xE0L

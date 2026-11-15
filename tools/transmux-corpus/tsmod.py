@@ -9,6 +9,11 @@ modes:
   asplit        audio ES re-chunked into 700-byte PES, so ADTS/AC-3 frames straddle PES boundaries
   pkt204        16 zero bytes appended to every packet (TS+FEC layout)
   pidshift      segments with index >= 2 move PMT/video/audio to new PIDs
+  nodts         video PES carry their PTS only, no DTS, also with B-frames (D13 in the parity doc)
+  aucut         every video PES starts with the previous picture's last slice NAL unit (start code and all)
+                and carries the timestamps of the picture that starts after it, as Apple's segmenter cuts them
+  dtslate       video DTS = the segment's PTS in presentation order with no reorder shift: B-frames get a
+                DTS a frame after their PTS (Apple's segmenter); the first PES of the segment has no DTS
 """
 import struct, sys
 
@@ -155,8 +160,39 @@ def main():
             abuf = abuf[n:]
             amarks = [(off - n, p) for off, p in amarks if off >= n]
 
+    if mode in ('aucut', 'dtslate'):
+        vev = [(i, pes_fields(pes)) for i, (pid, pes) in enumerate(events) if pid in vpids and len(pes) >= 9 and pes[:3] == b'\x00\x00\x01']
+        if mode == 'dtslate':
+            ordered = sorted(f[1] for _, f in vev if f[1] is not None)
+            late = {i: ordered[k] for k, (i, f) in enumerate(vev) if k < len(ordered)}
+        else:
+            # Payload moved: each PES gives its last slice NAL unit (from its start code) to the next PES.
+            def last_slice(data):
+                at, j = -1, 0
+                while True:
+                    j = data.find(b'\x00\x00\x01', j)
+                    if j < 0 or j + 3 >= len(data):
+                        break
+                    t = data[j + 3] & 0x1F if vtypes_of.get(True) == 'avc' else (data[j + 3] >> 1) & 0x3F
+                    if (vtypes_of.get(True) == 'avc' and t in (1, 5)) or (vtypes_of.get(True) != 'avc' and t <= 21):
+                        at = j - 1 if j > 0 and data[j - 1] == 0 else j
+                    j += 3
+                return at
+            vtypes_of = {True: 'avc' if any(t == 0x1B for t, p, _ in streams if p in vpids) else 'hevc'}
+            moved = {}
+            for k, (i, f) in enumerate(vev):
+                data = moved.get(i, b'') + f[3]
+                at = last_slice(f[3]) if k + 1 < len(vev) else -1
+                if at > 0:
+                    head = moved.get(i, b'')
+                    moved[i] = head + f[3][:at]
+                    moved[vev[k + 1][0]] = f[3][at:]
+                else:
+                    moved[i] = data
+            cut = {i: moved[i] for i, _ in vev}
+
     apid_out = None
-    for pid, pes in events:
+    for idx, (pid, pes) in enumerate(events):
         opid = pidmap[pid]
         if len(pes) < 9 or pes[:3] != b'\x00\x00\x01':
             continue
@@ -166,6 +202,15 @@ def main():
             for k in range(0, len(data), step):
                 keep = k == 0 or mode == 'vsplit_pts'
                 pkts.extend(w.packets(opid, make_pes(sid, pts if keep else None, dts if keep else None, data[k:k + step], True)))
+        elif pid in vpids and mode == 'nodts':
+            pkts.extend(w.packets(opid, make_pes(sid, pts, None, data, True)))
+        elif pid in vpids and mode == 'dtslate':
+            first = idx == vev[0][0]
+            d = None if first else late.get(idx, dts)
+            # make_pes writes no DTS when it equals the PTS; a later one is written as given.
+            pkts.extend(w.packets(opid, make_pes(sid, pts, d, data, True)))
+        elif pid in vpids and mode == 'aucut':
+            pkts.extend(w.packets(opid, make_pes(sid, pts, dts, cut[idx], True)))
         elif pid not in vpids and mode == 'asplit':
             apid_out = opid; asid = sid
             # Mark every ADTS frame start with its own PTS (PES PTS + k * 1024 samples).

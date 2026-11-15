@@ -64,6 +64,9 @@ class TsDemuxer(private val sink: SampleSink) {
 
     private val carry = ByteArrayBuilder(256 * 1024)
 
+    /** One 33-bit unwrapper for every stream, kept across PMT changes (see [TimestampUnwrapper]). */
+    private val clock = TimestampUnwrapper()
+
     /** Feeds a chunk of TS bytes. Buffers any trailing partial packet until the next [feed]. */
     fun feed(input: ByteArray, length: Int) {
         // Prepend any carried-over partial packet.
@@ -114,11 +117,38 @@ class TsDemuxer(private val sink: SampleSink) {
         if (remaining > 0) stash(data, pos, remaining)
     }
 
+    /**
+     * The bytes fed next are another section of the stream (an HLS discontinuity): each video reader
+     * drops that section's frames before its first keyframe. Bytes fed before belong to the section before.
+     */
+    fun sectionStart() {
+        // A PES ends only when the next one starts: the last of each stream is the section before's.
+        for (asm in readersByPid.values) asm.endPes()
+        // Another section may come from another encoder with its own clock: it's placed by Timeline.
+        clock.reset()
+        for ((_, reader) in readers) {
+            reader.sectionStart()
+            // Every track's next sample opens the new section, video after its dropped leading frames.
+            val t = reader.track
+            val at = t.samples.size
+            if (at > 0 && t.sectionBreaks.lastOrNull() != at) t.sectionBreaks.add(at)
+        }
+    }
+
     /** Flush any buffered PES and let readers emit trailing samples. Call once after the last feed. */
     fun finish() {
         if (pmtEsLoop == null && !autoGuessed && held.isNotEmpty()) autoGuess()
         for (asm in readersByPid.values.toList()) asm.flush()
         for ((_, reader) in readers) reader.finish()
+        // An audio/video stream that carried data but gave no frames was not understood (a codec taken
+        // for another, or one the probe never settled on): the remux would leave it out without saying so.
+        for ((pid, asm) in readersByPid) {
+            if (asm.bytesSeen < LOST_MIN_BYTES || asm.reader.track.samples.isNotEmpty()) continue
+            val av = asm.streamId in 0xC0..0xEF || asm.streamId == 0xBD || asm.streamId == 0xFD
+            if (asm.reader is ProbeReader && !av) continue
+            val what = if (asm.reader is ProbeReader) "unidentified stream" else "${kindByPid[pid] ?: "stream"} with no frames"
+            lostStreams += "$what (pid $pid, stream_id 0x${Integer.toHexString(asm.streamId)})"
+        }
     }
 
     private fun carryReset() {
@@ -255,25 +285,57 @@ class TsDemuxer(private val sink: SampleSink) {
     /** [s] is a whole section from its table_id. */
     private fun parsePat(s: ByteArray) {
         if (s.size < 12 || (s[0].toInt() and 0xFF) != 0x00) return
+        if (!crcAccepted(0, s)) return
         if ((s[5].toInt() and 0x01) == 0) return // current_next_indicator: not yet applicable
         var loop = 8
         val sectionEnd = s.size - 4 // minus CRC32
+        val pmts = ArrayList<Int>()
         while (loop + 4 <= sectionEnd) {
             val programNumber = ((s[loop].toInt() and 0xFF) shl 8) or (s[loop + 1].toInt() and 0xFF)
             val pid = ((s[loop + 2].toInt() and 0x1F) shl 8) or (s[loop + 3].toInt() and 0xFF)
-            if (programNumber != 0) {
-                if (pid != pmtPid) {
-                    if (pmtPid >= 0) Logger.info("XDM", "TS: PMT moved from pid=$pmtPid to pid=$pid")
-                    pmtPid = pid
-                    pmtEsLoop = null
-                }
-                return
-            }
+            if (programNumber != 0 && pid !in pmts) pmts += pid
             loop += 4
         }
+        if (pmts.isEmpty()) return
+        programs = pmts
+        // The program in use stays while the PAT still lists it (it may be one past the first, see parsePmt).
+        if (pmtPid in pmts) return
+        val pid = pmts[0]
+        if (pmtPid >= 0) Logger.info("XDM", "TS: PMT moved from pid=$pmtPid to pid=$pid")
+        pmtPid = pid
+        pmtEsLoop = null
     }
 
-    /** Packets of PIDs no PMT has described yet (copies from their sync byte), for [autoGuess]. */
+    /** PMT PIDs of the PAT's programs, in its order. */
+    private var programs: List<Int> = emptyList()
+
+    /** Whether a PMT entry is an audio or video stream (one we read, probe, or report as lost). */
+    private fun isAv(streamType: Int, programRegistration: Int?, info: EsDescriptors): Boolean =
+        when (val m = StreamType.map(streamType, programRegistration, info.registration, info.dvbAudio, info.nonAv, info.ac4)) {
+            is StreamMapping.Skip -> m.unsupported != null
+            else -> true
+        }
+
+    /**
+     * Per PSI PID, as ffmpeg: 100 after a section with a good CRC, one less per bad one down to -10;
+     * sections with a bad CRC are dropped until it gets there, then believed (a muxer that writes no or
+     * wrong CRCs still works, after ten sections).
+     */
+    private val crcValidity = HashMap<Int, Int>()
+
+    private fun crcAccepted(pid: Int, s: ByteArray): Boolean {
+        val v = crcValidity[pid] ?: 0
+        if (MpegCrc32.of(s) == 0) { crcValidity[pid] = 100; return true }
+        if (v > -10) {
+            crcValidity[pid] = v - 1
+            if (v == 0) Logger.info("XDM", "TS: section with a bad CRC on pid=$pid; dropped")
+            return false
+        }
+        if (v == -10) { crcValidity[pid] = -11; Logger.info("XDM", "TS: pid=$pid only has bad CRCs; believing its sections") }
+        return true
+    }
+
+    /** Packets of PIDs no PMT has described yet (copies from their sync byte), for [autoGuess] or the first PMT. */
     private val held = ArrayList<ByteArray>()
     private var autoGuessed = false
 
@@ -300,7 +362,7 @@ class TsDemuxer(private val sink: SampleSink) {
         }
         Logger.info("XDM", "TS: no PMT in the first ${held.size} packets; guessing ${guessed.size} streams from their PES headers")
         for ((pid, streamId) in guessed) {
-            readersByPid[pid] = PesAssembler(ProbeReader(pid, if (streamId in 0xC0..0xDF) StreamReader.MPEG_AUDIO else null))
+            readersByPid[pid] = PesAssembler(ProbeReader(pid, if (streamId in 0xC0..0xDF) StreamReader.MPEG_AUDIO else null), clock)
         }
         val replay = ArrayList(held)
         held.clear()
@@ -309,6 +371,7 @@ class TsDemuxer(private val sink: SampleSink) {
 
     private fun parsePmt(s: ByteArray) {
         if (s.size < 16 || (s[0].toInt() and 0xFF) != 0x02) return
+        if (!crcAccepted(pmtPid, s)) return
         if ((s[5].toInt() and 0x01) == 0) return // current_next_indicator
         val sectionEnd = s.size - 4
         val programInfoLength = ((s[10].toInt() and 0x0F) shl 8) or (s[11].toInt() and 0xFF)
@@ -318,9 +381,6 @@ class TsDemuxer(private val sink: SampleSink) {
         val program = s.copyOfRange(10, sectionEnd)
         if (pmtEsLoop?.contentEquals(program) == true) return
         val firstPmt = pmtEsLoop == null && readers.isEmpty()
-        pmtEsLoop = program
-        // Packets before the PMT are dropped, as they always were (a PMT normally opens every segment).
-        held.clear()
         // A program-level registration (HDMV/HDPR for Blu-ray) changes what some stream types mean.
         val programRegistration = readEsDescriptors(s, 12, loopStart).registration
 
@@ -334,8 +394,30 @@ class TsDemuxer(private val sink: SampleSink) {
             streams.add(Triple(streamType, esPid, info))
             esLoopPos += 5 + esInfoLength
         }
+        if (firstPmt && programs.size > 1 && streams.none { (type, _, info) -> isAv(type, programRegistration, info) }) {
+            // A program without audio or video (a data or EPG service in a multi-program stream): the next
+            // program of the PAT is read instead, until one has some.
+            val next = programs.indexOf(pmtPid) + 1
+            if (next in 1 until programs.size) {
+                Logger.info("XDM", "TS: program on pmt pid=$pmtPid has no audio or video; trying pid=${programs[next]}")
+                pmtPid = programs[next]
+                return
+            }
+        }
+        pmtEsLoop = program
+        // Packets that came before the first PMT are replayed below for the PIDs it maps, as ffmpeg keeps them.
+        val early = if (held.isEmpty()) null else ArrayList(held)
+        held.clear()
         if (!firstPmt) Logger.info("XDM", "TS: PMT changed; remapping ${streams.size} streams")
         applyPmt(streams, programRegistration)
+        if (early != null) {
+            var replayed = 0
+            for (pkt in early) {
+                val pid = ((pkt[1].toInt() and 0x1F) shl 8) or (pkt[2].toInt() and 0xFF)
+                if (readersByPid.containsKey(pid)) { parsePacket(pkt, 0); replayed++ }
+            }
+            if (replayed > 0) Logger.info("XDM", "TS: $replayed packets came before the first PMT; kept")
+        }
     }
 
     /**
@@ -349,6 +431,7 @@ class TsDemuxer(private val sink: SampleSink) {
         val claimed = HashSet<ElementaryStreamReader>()
         val pending = ArrayList<Triple<Int, StreamReader, Int?>>() // pid, reader, Opus channel config
         for ((streamType, pid, info) in streams) {
+            if (info.language != null) languageByPid[pid] = info.language else languageByPid.remove(pid)
             when (val m = StreamType.map(streamType, programRegistration, info.registration, info.dvbAudio, info.nonAv, info.ac4)) {
                 is StreamMapping.Skip -> {
                     if (pid !in loggedPids) {
@@ -362,9 +445,11 @@ class TsDemuxer(private val sink: SampleSink) {
                     }
                 }
                 is StreamMapping.Probe -> {
-                    newByPid[pid] = PesAssembler(ProbeReader(pid, m.fallback))
+                    pidOrder.getOrPut(pid) { pidOrder.size }
+                    newByPid[pid] = PesAssembler(ProbeReader(pid, m.fallback), clock)
                 }
                 is StreamMapping.Read -> {
+                    pidOrder.getOrPut(pid) { pidOrder.size }
                     val asm = readersByPid[pid]
                     if (asm != null && kindByPid[pid] == m.reader && asm.reader !in claimed) {
                         newByPid[pid] = asm; newKindByPid[pid] = m.reader; claimed += asm.reader
@@ -376,23 +461,48 @@ class TsDemuxer(private val sink: SampleSink) {
         }
         for ((pid, kind, opusConfig) in pending) {
             opusChannelConfig = opusConfig
-            val reader = readerFor(kind, claimed)
+            val reader = readerFor(kind, claimed, pid)
             claimed += reader
-            newByPid[pid] = PesAssembler(reader)
+            newByPid[pid] = PesAssembler(reader, clock)
             newKindByPid[pid] = kind
         }
         // Hand over cleanly: whatever a dropped or re-pointed PID still buffers belongs to the old stream.
         for ((pid, asm) in readersByPid.entries.toList()) if (newByPid[pid] !== asm) asm.flush()
         readersByPid.clear(); readersByPid.putAll(newByPid)
         kindByPid.clear(); kindByPid.putAll(newKindByPid)
+        for ((pid, asm) in readersByPid) labelTrack(pid, asm.reader)
     }
 
-    /** The first existing reader of [kind] not in [claimed], else a new one (and track). */
-    private fun readerFor(kind: StreamReader, claimed: Set<ElementaryStreamReader>): ElementaryStreamReader =
+    /** ISO 639 language of each PID from the PMT in effect. */
+    private val languageByPid = HashMap<Int, String>()
+
+    /** A track's language is the first one a PMT gave its stream. */
+    private fun labelTrack(pid: Int, reader: ElementaryStreamReader) {
+        if (reader is ProbeReader) return
+        val t = reader.track
+        if (t.language == null) t.language = languageByPid[pid]
+    }
+
+    /** Each A/V PID's position in the first PMT that listed it (later PIDs after earlier ones). */
+    private val pidOrder = HashMap<Int, Int>()
+
+    /** Each track's [pidOrder] when it was created. */
+    private val trackOrder = java.util.IdentityHashMap<Track, Int>()
+
+    /**
+     * The first existing reader of [kind] not in [claimed], else a new one (and track). A new track goes
+     * where [pid] stands in the PMT, as ffmpeg creates its streams while reading the PMT (mpegts.c
+     * pmt_cb) and probing only fills in the codec: a probed video stream identified after the audio's
+     * first PES still comes first when the PMT lists it first.
+     */
+    private fun readerFor(kind: StreamReader, claimed: Set<ElementaryStreamReader>, pid: Int): ElementaryStreamReader =
         readers.firstOrNull { (k, r) -> k == kind && r !in claimed }?.second
             ?: createReader(kind).also {
                 readers += kind to it
-                tracks.add(it.track)
+                val key = pidOrder[pid] ?: Int.MAX_VALUE
+                trackOrder[it.track] = key
+                val at = tracks.indexOfFirst { t -> (trackOrder[t] ?: Int.MAX_VALUE) > key }
+                if (at < 0) tracks.add(it.track) else tracks.add(at, it.track)
             }
 
     /** What we use from a descriptor loop. */
@@ -404,6 +514,8 @@ class TsDemuxer(private val sink: SampleSink) {
         val nonAv: Boolean,
         /** DVB AC-4 descriptor (extension descriptor 0x7F, tag extension 0x15). */
         val ac4: Boolean,
+        /** ISO_639_language_descriptor (tag 0x0A): the first language code, lower case. */
+        val language: String? = null,
     )
 
     /**
@@ -416,6 +528,7 @@ class TsDemuxer(private val sink: SampleSink) {
         var dvbAudio: StreamReader? = null
         var nonAv = false
         var ac4 = false
+        var language: String? = null
         var d = start
         while (d + 2 <= end) {
             val tag = data[d].toInt() and 0xFF
@@ -434,10 +547,14 @@ class TsDemuxer(private val sink: SampleSink) {
                 tag == 0x7A -> dvbAudio = StreamReader.EAC3  // DVB enhanced_AC-3_descriptor
                 tag == 0x7B -> dvbAudio = StreamReader.DTS   // DVB DTS_descriptor
                 tag in NON_AV_DESCRIPTORS -> nonAv = true
+                tag == 0x0A && len >= 4 && language == null -> {
+                    val code = String(data, d + 2, 3, Charsets.ISO_8859_1).lowercase()
+                    if (code.all { it in 'a'..'z' } && code != "und") language = code
+                }
             }
             d += 2 + len
         }
-        return EsDescriptors(registration, opusChannelConfig, dvbAudio, nonAv, ac4)
+        return EsDescriptors(registration, opusChannelConfig, dvbAudio, nonAv, ac4, language)
     }
 
     /** Stands in for the reader of a stream whose codec its first PES payloads have to show. */
@@ -471,9 +588,10 @@ class TsDemuxer(private val sink: SampleSink) {
             return
         }
         Logger.info("XDM", "TS: stream pid=$pid identified as $kind")
-        val reader = readerFor(kind, readersByPid.values.map { it.reader }.toSet())
+        val reader = readerFor(kind, readersByPid.values.map { it.reader }.toSet(), pid)
         asm.reader = reader
         kindByPid[pid] = kind
+        labelTrack(pid, reader)
         reader.consume(data, offset, length, pts, dts)
     }
 
@@ -498,6 +616,8 @@ class TsDemuxer(private val sink: SampleSink) {
         const val PROBE_PES = 4
         /** The same for a stream that may be video: a GOP's worth of pictures, to reach a keyframe. */
         const val PROBE_PES_VIDEO = 64
+        /** PES data below this a stream may carry without frames out (a stub track) before it counts as lost. */
+        const val LOST_MIN_BYTES = 16 * 1024L
         /** Packets held back while no PMT has been seen, before the streams are guessed (376 KB). */
         const val AUTO_GUESS_PACKETS = 2000
         val VIDEO_READERS = setOf(StreamReader.H264, StreamReader.H265, StreamReader.MPEG_VIDEO, StreamReader.MPEG4_VISUAL)

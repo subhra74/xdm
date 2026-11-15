@@ -20,7 +20,7 @@ import xdm.core.media.muxer.transmux.iso.Mp4Demuxer
 import xdm.core.media.muxer.transmux.mkv.MatroskaDemuxer
 import xdm.core.media.muxer.transmux.mkv.MkvWriter
 import xdm.core.media.muxer.transmux.mp4.Mp4Writer
-import xdm.core.media.muxer.transmux.sample.presentationStart
+import xdm.core.media.muxer.transmux.ogg.OggWriter
 import xdm.core.media.muxer.transmux.sample.SampleSpill
 import xdm.core.media.muxer.transmux.packed.PackedAudioDemuxer
 import xdm.core.media.muxer.transmux.sample.Track
@@ -85,6 +85,12 @@ class TransmuxingMuxer(
 
     override fun setSegmentInfo(info: Map<String, SegmentInfo>) { segmentInfo = info }
 
+    /** [setKeepOriginalFormat]: TS inputs are written as one `.ts` at packet level, not remuxed. */
+    @Volatile
+    private var keepOriginal = false
+
+    override fun setKeepOriginalFormat(keep: Boolean) { keepOriginal = keep }
+
     /** Tests: make every remux attempt fail, so the fallbacks after it run on ordinary input. */
     internal var failRemuxForTest = false
 
@@ -105,9 +111,48 @@ class TransmuxingMuxer(
         discontinuous: Boolean,
     ): Boolean {
         outputKind = OutputKind.REMUXED
+        if (keepOriginal && keepTs(listOf(segments)) && keepAsTs(segments, emptyList(), output)) return true
+        if (stopFlag.get()) return false
         if (remux(output, tempDir, listOf(segments), discontinuous) { writer -> demuxList(segments, writer, progressCallback) }) return true
         if (!mayFallBack()) return false
         return singleListFallback(segments, output)
+    }
+
+    // ---- the original format kept (setKeepOriginalFormat) ----
+
+    /**
+     * Every list is TS, or the second (the audio) is HLS packed audio: those keep their format as one
+     * `.ts` at packet level. Anything else (fMP4, standalone MP4, WebM segments) is remuxed as usual,
+     * its own container family anyway.
+     */
+    private fun keepTs(lists: List<List<String>>): Boolean {
+        val kinds = lists.map { media(it) }.filter { it.isNotEmpty() }.map { list -> list.map { SegmentProbe.locate(it)?.container }.toSet() }
+        if (kinds.isEmpty() || kinds.first() != setOf(Container.TS)) return false
+        return kinds.drop(1).all { it == setOf(Container.TS) || it == setOf(Container.PACKED_AUDIO) }
+    }
+
+    /**
+     * [primary] (the video, or the only list) written as one `.ts`: joined byte for byte from each
+     * segment's media start, or merged with the [secondary] rendition ([TsMerge]). False (the caller
+     * then remuxes) when that fails for any reason but a stop.
+     */
+    private fun keepAsTs(allPrimary: List<String>, allSecondary: List<String>, output: StorageFile): Boolean {
+        val primary = media(allPrimary)
+        val secondary = media(allSecondary)
+        val p = primary.map { SegmentProbe.locate(it)!! }
+        val ok = if (secondary.isEmpty()) {
+            join(primary.zip(p.map { it.offset }), output, "ts", OutputKind.REMUXED, "Original format kept: TS segments joined into one .ts", fallback = false)
+        } else {
+            val s = secondary.map { SegmentProbe.locate(it)!! }
+            val packed = s.first().container == Container.PACKED_AUDIO
+            fun inputs(list: List<String>, loc: List<SegmentProbe.Located>) =
+                list.indices.map { TsMerge.Input(list[it], loc[it].offset, segmentInfo[list[it]]?.section) }
+            write(output, "ts", OutputKind.REMUXED, "Original format kept: renditions merged into one .ts", fallback = false) { out ->
+                TsMerge(stopFlag).merge(inputs(primary, p), inputs(secondary, s), packed, out)
+            }
+        }
+        if (!ok && !stopFlag.get()) Logger.info("XDM", "Couldn't keep the original format; remuxing instead")
+        return ok
     }
 
     // ---- fallbacks: a download is never lost to a remux that can't be done ----
@@ -116,20 +161,27 @@ class TransmuxingMuxer(
     private fun mayFallBack() = !stopFlag.get() && !isOutOfSpace(lastError)
 
     /**
-     * The remux, and once more as MP4 when Matroska couldn't name a track ([TrackLostException]): MP4
-     * copies a sample entry it doesn't know as it is.
+     * The remux, and once more when the writer couldn't carry a track ([TrackLostException]): an Ogg
+     * Opus output that isn't one Opus track as Matroska audio, and Matroska as MP4, which copies a
+     * sample entry it doesn't know as it is.
      */
     private fun remux(
         output: StorageFile, tempDir: String, inputs: List<List<String>>, discontinuous: Boolean,
         body: (ContainerWriter) -> List<Track>,
     ): Boolean {
         if (transmux(output, tempDir, inputs, discontinuous, null, body)) return true
-        if (mayFallBack() && lastError is TrackLostException) {
-            Logger.info("XDM", "Fallback: ${lastError?.message}; muxing as MP4 instead")
-            if (transmux(output, tempDir, inputs, discontinuous, "mp4", body)) return true
+        var tried = plannedFormat
+        while (mayFallBack() && lastError is TrackLostException) {
+            val next = if (tried == MuxContainer.OPUS) "mka" else if (tried != "mp4") "mp4" else return false
+            Logger.info("XDM", "Fallback: ${lastError?.message}; muxing as $next instead")
+            if (transmux(output, tempDir, inputs, discontinuous, next, body)) return true
+            tried = next
         }
         return false
     }
+
+    /** The container the last [transmux] wrote or tried to write. */
+    private var plannedFormat: String? = null
 
     /**
      * One list that couldn't be remuxed without leaving something out: TS segments joined into one
@@ -149,6 +201,23 @@ class TransmuxingMuxer(
         }
         if (!done && mayFallBack() && lastError == null) lastError = reason
         return done
+    }
+
+    /**
+     * Whether [inputs] have a fallback that keeps every byte when the remux is refused for its timing
+     * ([xdm.core.media.muxer.transmux.sample.RemuxCheck]): TS segments joined, TS + TS / packed audio
+     * merged, one fMP4 rendition joined. Standalone MP4 parts and WebM have none: their remux is kept.
+     */
+    private fun losslessFallbackFor(inputs: List<List<String>>): Boolean {
+        if (failOneFileFallbacksForTest) return false
+        val lists = inputs.filter { it.isNotEmpty() }
+        val loc = lists.map { l -> l.map { SegmentProbe.locate(it) } }
+        fun allTs(i: Int) = loc[i].all { it?.container == Container.TS }
+        return when (lists.size) {
+            1 -> allTs(0) || singleInitFmp4(lists[0], loc[0])
+            2 -> allTs(0) && loc[1].map { it?.container }.toSet().let { it == setOf(Container.TS) || it == setOf(Container.PACKED_AUDIO) }
+            else -> false
+        }
     }
 
     /**
@@ -198,8 +267,10 @@ class TransmuxingMuxer(
     }
 
     /** Files (each from its media start) joined byte for byte into [output]. */
-    private fun join(files: List<Pair<String, Long>>, output: StorageFile, container: String, kind: OutputKind, what: String): Boolean =
-        write(output, container, kind, what) { out ->
+    private fun join(
+        files: List<Pair<String, Long>>, output: StorageFile, container: String, kind: OutputKind, what: String, fallback: Boolean = true,
+    ): Boolean =
+        write(output, container, kind, what, fallback) { out ->
             val buf = ByteArray(256 * 1024)
             for ((path, from) in files) {
                 FileInputStream(path).use { input ->
@@ -216,7 +287,9 @@ class TransmuxingMuxer(
         }
 
     /** Writes [output] through [body] and records it as [container] / [kind]; deletes it on a stop or an error. */
-    private inline fun write(output: StorageFile, container: String, kind: OutputKind, what: String, body: (OutputStream) -> Boolean): Boolean {
+    private inline fun write(
+        output: StorageFile, container: String, kind: OutputKind, what: String, fallback: Boolean = true, body: (OutputStream) -> Boolean,
+    ): Boolean {
         return try {
             val ok = output.open(create = true).use { handle ->
                 handle.setLength(0)
@@ -227,7 +300,7 @@ class TransmuxingMuxer(
                 ok
             }
             if (!ok || stopFlag.get()) { output.delete(); return false }
-            Logger.info("XDM", "Fallback: $what")
+            Logger.info("XDM", if (fallback) "Fallback: $what" else what)
             lastError = null
             timelineStartSec = null
             outputContainer = container
@@ -235,7 +308,7 @@ class TransmuxingMuxer(
             true
         } catch (ex: Exception) {
             output.delete()
-            if (!stopFlag.get()) { Logger.error("XDM", "Fallback failed: $what", ex); lastError = ex }
+            if (!stopFlag.get()) { Logger.error("XDM", "Failed: $what", ex); lastError = ex }
             false
         }
     }
@@ -279,6 +352,8 @@ class TransmuxingMuxer(
         file1: String, file2: String, output: StorageFile, progressCallback: (Int) -> Unit, tempDir: String
     ): Boolean {
         outputKind = OutputKind.REMUXED
+        if (keepOriginal && keepTs(listOf(listOf(file1), listOf(file2))) && keepAsTs(listOf(file1), listOf(file2), output)) return true
+        if (stopFlag.get()) return false
         val ok = remux(output, tempDir, listOf(listOf(file1), listOf(file2)), false) { writer ->
             val first = demuxList(listOf(file1), writer) {}
             requireMedia(listOf(file1), first, "first track")
@@ -304,11 +379,22 @@ class TransmuxingMuxer(
         discontinuous: Boolean,
     ): Boolean {
         outputKind = OutputKind.REMUXED
+        if (keepOriginal && keepOriginalLists(videoSegments, audioSegments, output)) return true
+        if (stopFlag.get()) return false
         val ok = remux(output, tempDir, listOf(audioSegments, videoSegments), discontinuous) { writer ->
             muxLists(audioSegments, videoSegments, writer, progressCallback)
         }
         if (ok || !mayFallBack()) return ok
         return mergeFallback(videoSegments, audioSegments, output)
+    }
+
+    /** [list] without empty files: a packager may list a 0-byte first segment, which holds nothing to keep. */
+    private fun media(list: List<String>) = list.filter { File(it).length() > 0 }
+
+    /** Separate playlists kept as one `.ts`: the video primary; an empty list leaves the other alone. */
+    private fun keepOriginalLists(video: List<String>, audio: List<String>, output: StorageFile): Boolean {
+        val (primary, secondary) = if (video.isEmpty()) audio to emptyList<String>() else video to audio
+        return keepTs(listOf(primary, secondary)) && keepAsTs(primary, secondary, output)
     }
 
     private fun muxLists(audioSegments: List<String>, videoSegments: List<String>, writer: SampleSink, progressCallback: (Int) -> Unit): List<Track> {
@@ -362,14 +448,24 @@ class TransmuxingMuxer(
         val requested = container ?: output.name.substringAfterLast('.', "")
         val matroskaInput = inputs.any { it.isNotEmpty() && containerOf(it.first()) == Container.MKV }
         val format = forceFormat ?: MuxContainer.plan(requested, matroskaInput)
+        plannedFormat = format
         if (!format.equals(requested, ignoreCase = true)) Logger.info("XDM", "Muxing as $format (asked for '$requested')")
         val writer: ContainerWriter =
-            (if (MuxContainer.isMatroska(format)) MkvWriter(output, tempDir) { stopFlag.get() }
-            else Mp4Writer(output)).also { it.repairTimeline = discontinuous }
+            (if (format == MuxContainer.OPUS) OggWriter(output, tempDir) { stopFlag.get() }
+            else if (MuxContainer.isMatroska(format)) MkvWriter(output, tempDir) { stopFlag.get() }
+            else Mp4Writer(output)).also {
+                it.repairTimeline = discontinuous
+                it.remuxCheckFallback = { losslessFallbackFor(inputs) }
+            }
         // Sample records of long streams spill to scratch files here; dropped when muxing ends.
         val spill = SampleSpill.open(File(tempDir))
         return try {
             val tracks = body(writer)
+            // A track with frames but no decoder configuration (H.264/H.265 with no SPS read: none in the
+            // segments, or one that didn't parse) can't be written: the writers would leave it out.
+            for (t in tracks) if (t.samples.isNotEmpty() && !t.isReady()) {
+                lost += "${t.codec} track with no usable decoder configuration (${t.samples.size} frames)"
+            }
             // A remux that leaves an audio or video stream out is not used: a fallback keeps everything.
             if (lost.isNotEmpty() && !stopFlag.get()) throw StreamLostException("Streams the remux can't carry: ${lost.joinToString()}")
             // An ad or other insert in another container restarts its timestamps, whatever the manifest says.
@@ -381,9 +477,8 @@ class TransmuxingMuxer(
                 lastError = NoMediaException("No audio or video found in the downloaded segments")
                 false
             } else {
-                // The earliest presented PTS, which the MP4 writer aligns the tracks on: time zero of the output.
-                timelineStartSec = tracks.filter { it.samples.isNotEmpty() && it.timescale > 0 }
-                    .minOfOrNull { presentationStart(it.samples).toDouble() / it.timescale }
+                // Time zero of the output on the tracks' timeline (the MP4 writer starts at the first video frame).
+                timelineStartSec = writer.presentationZero(tracks)
                 val ok = writer.finish(tracks)
                 if (!ok) output.delete() else outputContainer = format
                 ok
@@ -418,6 +513,8 @@ class TransmuxingMuxer(
         val tracks: () -> List<Track>
         /** Audio/video streams this demuxer left out. */
         var lost: () -> Collection<String> = { emptyList() }
+        /** The next segment starts another section (a playlist discontinuity); only TS readers need it. */
+        var sectionStart: () -> Unit = {}
         var finished = false
             private set
 
@@ -437,6 +534,7 @@ class TransmuxingMuxer(
                         }
                     }
                     end = { demux.finish() }; tracks = { demux.tracks }; lost = { demux.lostStreams }
+                    sectionStart = { demux.sectionStart() }
                 }
                 Container.MKV -> MatroskaDemuxer(writer).let { d -> feed = { seg, from -> d.parseSegment(seg, from) }; end = { d.finish() }; tracks = { d.tracks }; lost = { d.lostStreams } }
                 Container.PACKED_AUDIO -> PackedAudioDemuxer(writer).let { d -> feed = { seg, from -> d.parseSegment(seg, from) }; end = { d.finish() }; tracks = { d.tracks } }
@@ -480,6 +578,9 @@ class TransmuxingMuxer(
 
         fun hasNext() = fed < segments.size
 
+        /** Playlist section of the segment fed last, when the playlist was given ([setSegmentInfo]). */
+        private var lastSection: Int? = null
+
         /** Share of the segments fed so far. */
         fun done() = if (segments.isEmpty()) 1.0 else fed.toDouble() / segments.size
 
@@ -493,6 +594,10 @@ class TransmuxingMuxer(
                 else -> current.container
             }
             val demux = if (current != null && current.container == target) current else switchTo(target, seg)
+            // A discontinuity in the playlist before this segment: its section opens at a keyframe.
+            val section = segmentInfo[seg]?.section
+            if (section != null && lastSection != null && section != lastSection && demux === current) demux.sectionStart()
+            if (section != null) lastSection = section
             demux.feed(seg, startOf(found, target))
             fed++
             record()

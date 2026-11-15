@@ -44,6 +44,8 @@ abstract class StreamingDownloaderTask(
     maxPiece: Int = 0,
     /** The subtitle picked for this download, saved beside the video as SRT; its segments are [SUBS_TAG] chunks. */
     private val subtitle: SubtitleTrack? = null,
+    /** Keep TS as `.ts` instead of remuxing ([Muxer.setKeepOriginalFormat]). */
+    private val keepOriginalFormat: Boolean = false,
 ) : DownloaderTask {
     protected val executorService: ExecutorService =
         Executors.newFixedThreadPool(maxPiece.takeIf { it > 0 } ?: config.maxSegments)
@@ -262,8 +264,28 @@ abstract class StreamingDownloaderTask(
         }
     }
 
+    /**
+     * All chunks are downloaded: sends their final state at once (the once-a-second updates may have missed
+     * the last ones), so the window's table shows every slot finished, and keeps it, while assembling.
+     */
+    private fun reportFinished() {
+        synchronized(this) {
+            progressTracker.finish(context.chunks)
+            prgInfo.apply {
+                this.progress = 100
+                this.downloaded = context.chunks.sumOf { it.downloaded.get() }
+                this.speed = 0f
+                this.eta = 0
+                this.segments = progressTracker.segmentData
+                this.slots = progressTracker.slotData
+            }
+        }
+        context.downloadHost.onDownloadProgress(prgInfo)
+    }
+
     private fun assemble() {
         if (context.stopFlag.get()) return
+        reportFinished()
         context.assembling.set(true)
         context.downloadHost.onAssembleStart(context.id)
         val tmpFile = outputFile()
@@ -292,6 +314,7 @@ abstract class StreamingDownloaderTask(
                 return
             }
             muxer.setSegmentInfo(segmentInfo())
+            muxer.setKeepOriginalFormat(keepOriginalFormat)
             val ret = if (context.hasSeparateStreams) {
                 assembleStreams(tmpFile)
             } else {
@@ -617,6 +640,7 @@ abstract class StreamingDownloaderTask(
                 this.eta = progressTracker.eta
                 this.speed = progressTracker.downloadSpeed
                 this.segments = progressTracker.segmentData
+                this.slots = progressTracker.slotData
             }
             context.downloaded.addAndGet(downloaded)
             if (update) {

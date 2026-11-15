@@ -54,6 +54,8 @@ class NewVideoDownloadWindow : JDialog(null as Window?) {
     private lateinit var lblSubtitles: JLabel
     private lateinit var cmbSubtitles: JComboBox<SubtitleChoice>
     private lateinit var chkSaveAsSrt: JCheckBox
+    /** HLS only: ticked remuxes into MP4 (MKV for WebM), unticked keeps TS as `.ts`. */
+    private lateinit var chkSaveAsMp4: JCheckBox
     /** The captured subtitle file this dialog downloads; null for a video. */
     private var capturedSubtitle: CapturedSubtitle? = null
     private lateinit var storageStatus: StorageStatusLabel
@@ -170,6 +172,20 @@ class NewVideoDownloadWindow : JDialog(null as Window?) {
             gridy = 4
         })
 
+        chkSaveAsMp4 = JCheckBox(text("ND_SAVE_AS_MP4")).apply {
+            name = "ND_SAVE_AS_MP4"
+            toolTipText = text("ND_SAVE_AS_MP4_TIP")
+            isOpaque = false
+            isVisible = false
+        }
+        contentPane.add(chkSaveAsMp4, GridBagConstraints().apply {
+            gridwidth = 4
+            anchor = GridBagConstraints.WEST
+            insets = scaledInsets(5, 0, 5, 5)
+            gridx = 1
+            gridy = 5
+        })
+
         val lblIgnore = JLabel(text("ND_IGNORE_PAGE")).apply {
             alignmentX = Component.LEFT_ALIGNMENT
             cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
@@ -201,7 +217,7 @@ class NewVideoDownloadWindow : JDialog(null as Window?) {
             gridwidth = 4
             insets = scaledInsets(5, 0, 5, 5)
             gridx = 1
-            gridy = 5
+            gridy = 6
         }
         contentPane.add(infoBox, gbcInfoBox)
 
@@ -212,7 +228,7 @@ class NewVideoDownloadWindow : JDialog(null as Window?) {
             gridwidth = 6
             fill = GridBagConstraints.HORIZONTAL
             gridx = 0
-            gridy = 6
+            gridy = 7
         }
         contentPane.add(panel, gcPanel)
         panel.layout = BoxLayout(panel, BoxLayout.X_AXIS)
@@ -279,9 +295,14 @@ class NewVideoDownloadWindow : JDialog(null as Window?) {
                 AppContext.config.saveSubtitlesAsSrt = convertToSrt
                 AppContext.config.save()
             }
+            val asMp4 = !chkSaveAsMp4.isVisible || chkSaveAsMp4.isSelected
+            if (chkSaveAsMp4.isVisible && AppContext.config.saveStreamsAsMp4 != asMp4) {
+                AppContext.config.saveStreamsAsMp4 = asMp4
+                AppContext.config.save()
+            }
             AppContext.downloader.addVideoDownload(
                 videoId, name, picker.selectedCategory?.id, picker.targetFolder, spnSegments.count,
-                (cmbSubtitles.selectedItem as? SubtitleChoice)?.track, convertToSrt,
+                (cmbSubtitles.selectedItem as? SubtitleChoice)?.track, convertToSrt, keepOriginalFormat = !asMp4,
             )
         } finally {
             dispose()
@@ -374,7 +395,11 @@ class NewVideoDownloadWindow : JDialog(null as Window?) {
             chkSaveAsSrt.isSelected = AppContext.config.saveSubtitlesAsSrt
             srtChoiceChanged()
         }
-        val url = http?.url ?: subtitle?.task?.url ?: tracker.getHlsVideo(vid)?.url ?: tracker.getDashVideo(vid)?.url
+        // HLS only: its TS segments can be kept as they are. DASH and other streams are always remuxed.
+        val hls = tracker.getHlsVideo(vid)
+        chkSaveAsMp4.isVisible = http == null && subtitle == null && hls != null && hls.extractor == null
+        if (chkSaveAsMp4.isVisible) chkSaveAsMp4.isSelected = AppContext.config.saveStreamsAsMp4
+        val url = http?.url ?: subtitle?.task?.url ?: hls?.url ?: tracker.getDashVideo(vid)?.url
         picker.reset(txtFileName.text, url, http?.origin ?: subtitle?.task?.origin ?: stream?.origin)
         updateStorageStatus()
         fillSubtitles(

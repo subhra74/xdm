@@ -18,6 +18,9 @@ const BLOCKED_DOMAINS = [
     "ytimg.com"          // thumbnails and player assets
 ];
 
+/** Match patterns for the domains above and their subdomains, for content-script excludeMatches. */
+export const BLOCKED_MATCH_PATTERNS = BLOCKED_DOMAINS.map(d => "*://*." + d + "/*"); // "*." covers the domain itself too
+
 /** True for one of the domains above or any subdomain of it ("m.youtube.com", "i.ytimg.com"). */
 export function isBlockedHost(hostname) {
     if (!hostname) {

@@ -220,6 +220,7 @@ class BatchDownloaderTask(
             "XDM",
             "Batch ${task.id} done: ${context.finishedCount} finished, ${context.skippedCount} skipped, $failedFiles failed"
         )
+        reportProgress(0, final = true)
         host.onDownloadSuccess(
             DownloadStatusInfo.FinalInfo(
                 id = task.id,
@@ -506,13 +507,14 @@ class BatchDownloaderTask(
         reportProgress(0)
     }
 
-    private fun reportProgress(count: Long) {
+    /** [final]: the batch is done; sent at once, with every connection slot shown finished. */
+    private fun reportProgress(count: Long, final: Boolean = false) {
         val total = context.files.size
         // A skipped file counts as done: there was nothing to fetch.
         val done = finished.get() + skipped.get()
         val failedNow = failed.get()
         val percent = if (total == 0) 100f else (done + failedNow) * 100f / total
-        if (!progressTracker.update(count, null, percent)) return
+        if (!progressTracker.update(count, null, percent) && !final) return
         val segments = context.files.mapIndexed { i, f ->
             val len = f.size
             val fraction = when {
@@ -534,6 +536,7 @@ class BatchDownloaderTask(
                 eta = progressTracker.eta,
                 downloaded = totalDownloaded.get(),
                 segments = segments,
+                slots = if (final) progressTracker.finishSlots(segments) else progressTracker.slotsFor(segments),
                 filesDone = done,
                 failedFiles = failedNow,
                 filesTotal = total,

@@ -18,6 +18,9 @@ object MuxContainer {
     const val MP4 = "mp4"
     const val MKV = "mkv"
 
+    /** Ogg Opus: one Opus audio track. */
+    const val OPUS = "opus"
+
     /** MP4-family extensions a caller may ask for and keep. */
     private val MP4_FAMILY = setOf("mp4", "m4a", "m4v")
 
@@ -46,11 +49,14 @@ object MuxContainer {
     /**
      * The extension a mux writes, from the [requested] one (the output name's, or the caller's pick)
      * and the inputs. [matroskaInput]: a segment list is WebM/Matroska. [mp4Incapable]: a track can't
-     * go into MP4. Matroska is never turned into MP4.
+     * go into MP4. Matroska is never turned into MP4. `opus` (Ogg Opus, one Opus track) is kept
+     * whatever the input; a stream that isn't one Opus track is written as `mka` instead
+     * ([xdm.core.media.muxer.transmux.ogg.OggWriter]).
      */
     fun plan(requested: String?, matroskaInput: Boolean, mp4Incapable: Boolean = false): String {
         val r = requested?.trim()?.trimStart('.')?.lowercase().orEmpty()
         return when {
+            r == OPUS -> OPUS
             r == "mkv" || r == "mka" -> r
             r == "webm" -> MKV
             r == "weba" -> "mka"

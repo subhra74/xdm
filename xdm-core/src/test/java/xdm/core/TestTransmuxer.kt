@@ -224,6 +224,13 @@ class TestTransmuxer {
     }
 
     /** Video start minus audio start, in seconds, as ffprobe reports it (edit lists applied). */
+    /**
+     * The video-minus-audio start the MP4 should have for a source whose is [source]: the output starts at
+     * the first video frame, and audio before it (up to 10 s) is skipped through its edit list, so both
+     * then start together; audio that starts later still waits for its time (an empty edit).
+     */
+    private fun expectedMp4Offset(source: Double) = if (source > 0 && source <= 10.0) 0.0 else source
+
     private fun videoMinusAudioStart(path: String): Double? {
         val streams = ffprobe(path, "codec_type,start_time") ?: return null
         val v = streams.first { it[0] == "video" }[1].toDouble()
@@ -233,7 +240,7 @@ class TestTransmuxer {
 
     /**
      * Returns [ts] with an extra ID3 timed-metadata stream (stream_type 0x15, PID 0x102) declared in
-     * every PMT, like HLS streams that carry an ID3 PID. The CRC isn't updated (the demuxer ignores it).
+     * every PMT, like HLS streams that carry an ID3 PID (CRC rewritten).
      */
     private fun withMetadataStream(ts: ByteArray): ByteArray {
         val out = ts.copyOf()
@@ -263,6 +270,7 @@ class TestTransmuxer {
             val newLength = sectionLength + 5
             out[p + 1] = ((out[p + 1].toInt() and 0xF0) or (newLength shr 8)).toByte()
             out[p + 2] = newLength.toByte()
+            fixSectionCrc(out, p)
         }
         return out
     }
@@ -554,10 +562,11 @@ class TestTransmuxer {
         assert(TransmuxingMuxer("/nonexistent-appdir").mux(segs, out, {}, workDir.path, false, false)) {
             "mux returned false"
         }
-        val expected = videoMinusAudioStart(segs.first()) ?: return
+        val source = videoMinusAudioStart(segs.first()) ?: return
+        val expected = expectedMp4Offset(source)
         val actual = videoMinusAudioStart(out)!!
         // Edit lists are in 1 ms movie ticks.
-        assert(kotlin.math.abs(actual - expected) < 0.002) { "A/V offset $actual s, source has $expected s" }
+        assert(kotlin.math.abs(actual - expected) < 0.002) { "A/V offset $actual s, expected $expected s (source $source s)" }
     }
 
     @Test
@@ -582,9 +591,10 @@ class TestTransmuxer {
         // Time zero is the pre-wrap start, not a wrapped frame's PTS.
         val start = muxer.timelineStartSec!!
         assert(start > wrapSec - 3 && start < wrapSec) { "timeline starts at $start s, wrap is at $wrapSec s" }
-        val expected = videoMinusAudioStart(segs.first()) ?: return
+        val source = videoMinusAudioStart(segs.first()) ?: return
+        val expected = expectedMp4Offset(source)
         val actual = videoMinusAudioStart(out)!!
-        assert(kotlin.math.abs(actual - expected) < 0.002) { "A/V offset $actual s, source has $expected s" }
+        assert(kotlin.math.abs(actual - expected) < 0.002) { "A/V offset $actual s, expected $expected s (source $source s)" }
         val durations = ffprobe(out, "codec_type,duration")!!.associate { it[0] to it[1].toDouble() }
         for ((type, d) in durations) assert(d in 3.8..4.2) { "$type lasts $d s, expected about 4 s" }
     }

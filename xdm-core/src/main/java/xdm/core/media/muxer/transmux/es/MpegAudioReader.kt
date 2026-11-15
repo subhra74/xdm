@@ -24,7 +24,7 @@ class MpegAudioReader(private val sink: SampleSink) : ElementaryStreamReader {
     override val track = Track(Codec.MP3)
     /** `header and HEADER_MASK` of the frames being read; 0 until the first is accepted. */
     private var lockedHeader = 0
-    private val clock = FrameClock()
+    private val clock = FrameClock(track.samples)
     /** Sampling rate of the current frames (the track timescale stays the first one's). */
     private var rate = 0
     private var descriptionIndex = 1

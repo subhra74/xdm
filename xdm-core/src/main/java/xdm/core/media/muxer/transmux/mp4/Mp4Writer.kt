@@ -6,6 +6,7 @@ package xdm.core.media.muxer.transmux.mp4
 
 import xdm.core.media.muxer.transmux.ContainerWriter
 import xdm.core.media.muxer.transmux.sample.Codec
+import xdm.core.media.muxer.transmux.sample.RemuxCheck
 import xdm.core.media.muxer.transmux.sample.Timeline
 import xdm.core.media.muxer.transmux.sample.Track
 import xdm.core.media.muxer.transmux.sample.assignSampleDurations
@@ -28,6 +29,7 @@ import java.io.BufferedOutputStream
  */
 class Mp4Writer(private val output: StorageFile, repairTimeline: Boolean = false) : ContainerWriter {
     override var repairTimeline: Boolean = repairTimeline
+    override var remuxCheckFallback: (() -> Boolean)? = null
     constructor(outputPath: String, repairTimeline: Boolean = false) : this(LocalStorage.file(outputPath), repairTimeline)
 
     /** Written front to back through [bos]; the mdat size is then patched through the same handle. */
@@ -125,34 +127,48 @@ class Mp4Writer(private val output: StorageFile, repairTimeline: Boolean = false
         /** Media ticks from [mediaTime] to the end of the last presented sample: the edit's length. */
         val presentedDuration: Long,
         val emptyEditMovie: Long,
-        val trackDurationMovie: Long
+        val trackDurationMovie: Long,
+        /** The first track of its type (tkhd enabled flag). */
+        val enabled: Boolean,
     )
 
     private fun buildMoov(tracks: List<Track>): BoxBuf {
         // A/V sync: each track's content becomes visible at its earliest PTS (not its first DTS,
-        // which precedes it by the B-frame reorder delay). Align tracks on that, then let the edit
-        // list skip the reorder delay inside each track.
+        // which precedes it by the B-frame reorder delay). Time zero is the first video frame
+        // (presentationZero); the edit list skips the reorder delay, and audio before zero.
         // After a discontinuity the timestamps restart: move each section as a whole (all tracks by
         // one offset) so it follows the previous one and keeps its own A/V sync.
         // The shared timeline step (also run by the MKV writer): sections placed back to back, gaps
         // and backward jumps repaired, the timestamps rewritten to match.
         Timeline.prepare(tracks, repairTimeline)
-        val startPts = tracks.map { presentationStart(it.samples) }
-        val globalStartSec = tracks.indices.minOf { startPts[it].toDouble() / tracks[it].timescale }
+        RemuxCheck.review(tracks, mp4 = true, remuxCheckFallback)
+        val startPts = tracks.map { presentationStart(it) }
+        val zeroSec = presentationZero(tracks) ?: 0.0
 
-        val plans = ArrayList<TrackPlan>()
+        val mediaTimes = LongArray(tracks.size)
         for ((idx, t) in tracks.withIndex()) {
             // Durations from successive DTS deltas (already repaired by the timeline step).
             assignSampleDurations(t.samples, false)
-
-            val mediaDuration = t.durationTicks()
-            val mediaTime = (startPts[idx] - t.samples.dts(0)).coerceIn(0, mediaDuration)
-            val presentedDuration = (presentationEnd(t.samples) - mediaTime).coerceAtLeast(0)
             val startSec = startPts[idx].toDouble() / t.timescale
-            val emptyEditMovie = ((startSec - globalStartSec) * movieTimescale).toLong().coerceAtLeast(0)
+            // A track that starts before time zero (audio before the first video frame) skips that part
+            // through its edit's media time; one that starts after it waits with an empty edit.
+            val skip = if (startSec < zeroSec) Math.round((zeroSec - startSec) * t.timescale) else 0L
+            mediaTimes[idx] = (startPts[idx] - t.samples.dts(0) + skip).coerceIn(0, t.durationTicks())
+        }
+        // Where an edit skips media, every track opens with the same short empty edit (LEAD_EMPTY_EDIT).
+        val lead = if (mediaTimes.any { it > 0 }) LEAD_EMPTY_EDIT else 0L
+
+        val plans = ArrayList<TrackPlan>()
+        for ((idx, t) in tracks.withIndex()) {
+            val mediaDuration = t.durationTicks()
+            val startSec = startPts[idx].toDouble() / t.timescale
+            val mediaTime = mediaTimes[idx]
+            val presentedDuration = (presentationEnd(t.samples) - mediaTime).coerceAtLeast(0)
+            val emptyEditMovie = ((startSec - zeroSec) * movieTimescale).toLong().coerceAtLeast(0) + lead
             val presentedMovie = toMovieUnitsCeil(presentedDuration, t.timescale)
             plans.add(
-                TrackPlan(t, idx + 1, mediaTime, mediaDuration, presentedDuration, emptyEditMovie, emptyEditMovie + presentedMovie)
+                TrackPlan(t, idx + 1, mediaTime, mediaDuration, presentedDuration, emptyEditMovie, emptyEditMovie + presentedMovie,
+                    enabled = tracks.indexOfFirst { it.codec.isVideo == t.codec.isVideo } == idx)
             )
         }
         val movieDuration = plans.maxOf { it.trackDurationMovie }
@@ -163,6 +179,27 @@ class Mp4Writer(private val output: StorageFile, repairTimeline: Boolean = false
             for (p in plans) writeTrak(this, p)
         }
         return buf
+    }
+
+    /**
+     * Time zero is the first video frame: audio that starts before it is skipped (by the edit's media
+     * time) rather than the video delayed by an empty edit, which Media Foundation (Films & TV, Media
+     * Player) ignores, showing the video that much early. Within [MAX_LEADING_AUDIO_SEC]: a longer
+     * lead is audio of its own (an intro), kept, with the video delayed as before.
+     */
+    override fun presentationZero(tracks: List<Track>): Double? {
+        val usable = tracks.filter { it.samples.isNotEmpty() && it.timescale > 0 }
+        if (usable.isEmpty()) return null
+        val start = { t: Track -> presentationStart(t).toDouble() / t.timescale }
+        val earliest = usable.minOf(start)
+        val video = usable.filter { it.codec.isVideo }.minOfOrNull(start) ?: return earliest
+        return if (video - earliest <= MAX_LEADING_AUDIO_SEC) video else earliest
+    }
+
+    /** ISO 639-2 code packed as three 5-bit letters (mdhd); 'und' when not known. */
+    private fun packedLanguage(code: String?): Int {
+        val c = code?.takeIf { it.length == 3 && it.all { ch -> ch in 'a'..'z' } } ?: "und"
+        return ((c[0] - '`') shl 10) or ((c[1] - '`') shl 5) or (c[2] - '`')
     }
 
     private fun toMovieUnitsCeil(mediaTicks: Long, mediaTimescale: Int): Long =
@@ -191,10 +228,13 @@ class Mp4Writer(private val output: StorageFile, repairTimeline: Boolean = false
         val t = p.track
         buf.box("trak") {
             box("tkhd") {
+                // In movie; enabled only on the first track of each type (as ffmpeg), so a player that
+                // honours the flags plays one audio track, not all of them at once.
+                val flags = if (p.enabled) 0x000003 else 0x000002
                 if (p.trackDurationMovie > U32_MAX) {
-                    fullBoxHeader(1, 0x000007); u64(0); u64(0); u32(p.trackId); u32(0); u64(p.trackDurationMovie)
+                    fullBoxHeader(1, flags); u64(0); u64(0); u32(p.trackId); u32(0); u64(p.trackDurationMovie)
                 } else {
-                    fullBoxHeader(0, 0x000007)  // enabled | in movie | in preview
+                    fullBoxHeader(0, flags)
                     u32(0); u32(0)
                     u32(p.trackId)
                     u32(0)                      // reserved
@@ -202,7 +242,7 @@ class Mp4Writer(private val output: StorageFile, repairTimeline: Boolean = false
                 }
                 u32(0); u32(0)              // reserved
                 u16(0)                      // layer
-                u16(0)                      // alternate_group
+                u16(if (t.codec.isVideo) 0 else 1) // alternate_group: the audio tracks are alternatives
                 u16(if (t.codec.isVideo) 0 else 0x0100) // volume
                 u16(0)                      // reserved
                 // Rotation / flip from the input, else the identity.
@@ -245,7 +285,7 @@ class Mp4Writer(private val output: StorageFile, repairTimeline: Boolean = false
                 } else {
                     fullBoxHeader(0, 0); u32(0); u32(0); u32(t.timescale); u32(p.mediaDuration)
                 }
-                u16(0x55C4)                 // language 'und'
+                u16(packedLanguage(t.language))
                 u16(0)
             }
             box("hdlr") {
@@ -289,23 +329,72 @@ class Mp4Writer(private val output: StorageFile, repairTimeline: Boolean = false
             writeStsc(this, t)
             writeStsz(this, t)
             writeStco(this, t)
+            if (t.codec == Codec.AAC || t.codec == Codec.OPUS) writeRollGroups(this, t)
+        }
+    }
+
+    /**
+     * Pre-roll as ffmpeg writes it (`sgpd`/`sbgp` of type 'roll'): AAC needs the frame before a seek
+     * point decoded first (roll distance -1 for every sample); Opus 80 ms of frames before it (the
+     * samples without that much before them get none). Players use it to avoid a click after a seek.
+     */
+    private fun writeRollGroups(buf: BoxBuf, t: Track) {
+        val s = t.samples
+        val n = s.size
+        if (n == 0) return
+        if (t.codec == Codec.AAC) {
+            buf.box("sgpd") { fullBoxHeader(1, 0); fourcc("roll"); u32(2); u32(1); u16(-1) }
+            buf.box("sbgp") { fullBoxHeader(0, 0); fourcc("roll"); u32(1); u32(n); u32(1) }
+            return
+        }
+        // Opus: runs of samples with the same roll distance, found in two passes over the table (count,
+        // then write); per pass a ring of the last few durations, nothing per sample.
+        val rollTicks = OPUS_PREROLL_SAMPLES * t.timescale / 48_000L
+        fun runs(each: (count: Int, distance: Int) -> Unit) {
+            val ring = LongArray(MAX_ROLL_PACKETS + 1)
+            var runCount = 0
+            var runDistance = -1
+            for (i in 0 until n) {
+                var remaining = rollTicks
+                var distance = 0
+                var j = i - 1
+                while (j >= 0 && distance <= MAX_ROLL_PACKETS) {
+                    remaining -= ring[j % ring.size]; distance++; j--
+                    if (remaining <= 0) break
+                }
+                if (remaining > 0 || distance > MAX_ROLL_PACKETS) distance = 0
+                ring[i % ring.size] = s.duration(i)
+                if (distance == runDistance) runCount++
+                else { if (runCount > 0) each(runCount, runDistance); runCount = 1; runDistance = distance }
+            }
+            if (runCount > 0) each(runCount, runDistance)
+        }
+        var entries = 0
+        var groups = 0
+        runs { _, d -> entries++; if (d != 0) groups++ }
+        if (groups == 0) return
+        buf.box("sgpd") {
+            fullBoxHeader(1, 0); fourcc("roll"); u32(2); u32(groups)
+            runs { _, d -> if (d != 0) u16(-d) }
+        }
+        buf.box("sbgp") {
+            fullBoxHeader(0, 0); fourcc("roll"); u32(entries)
+            var group = 0
+            runs { count, d -> u32(count); u32(if (d != 0) ++group else 0) }
         }
     }
 
     private fun writeStsd(buf: BoxBuf, t: Track) {
         buf.box("stsd") {
             fullBoxHeader(0, 0)
-            val entry = t.sampleEntryBox
-            if (entry != null) {
-                // Sample entries copied from an MP4 input (avc1/mp4a/...) or frozen by a reader when the
-                // stream's config changed mid-way (see Track.additionalSampleEntries).
-                u32(1 + t.additionalSampleEntries.size)
-                bytes(entry)
-                for (extra in t.additionalSampleEntries) bytes(extra)
-                return@box
-            }
-            u32(1)
-            SampleEntries.write(this, t)
+            // Sample entries copied from an MP4 input (avc1/mp4a/...) or frozen by a reader when the
+            // stream's config changed mid-way (see Track.additionalSampleEntries); else built now.
+            val entries = (listOf(t.sampleEntryBox ?: SampleEntries.build(t)!!) + t.additionalSampleEntries)
+                .map { SampleEntries.withVuiBoxes(it, t.width, t.height) }
+            // An esds without bitrates (ours) gets the track's, measured in one pass, as ffmpeg fills them.
+            val rates = if (entries.any { CodecBoxes.esdsRatesUnset(it) }) EsdsRates.of(t) else null
+            u32(entries.size)
+            for (e in entries) bytes(if (rates != null) CodecBoxes.withEsdsRates(e, rates) else e)
         }
     }
 
@@ -456,3 +545,20 @@ class Mp4Writer(private val output: StorageFile, repairTimeline: Boolean = false
 }
 
 private const val U32_MAX = 0xFFFFFFFFL
+
+/** Opus seek pre-roll, 80 ms at 48 kHz (RFC 7845), and the most packets it may span (ffmpeg's limit). */
+private const val OPUS_PREROLL_SAMPLES = 3840L
+private const val MAX_ROLL_PACKETS = 32
+
+/**
+ * Movie ticks (1 ms) of the empty edit every track's edit list opens with. Media Foundation (Films & TV,
+ * Media Player) applies an edit's media_time (the B-frame delay, the audio skipped before the first
+ * video frame) only after an empty edit: with a lone edit it plays from the first sample's composition
+ * time instead, 80 ms late for two B-frames, the audio not skipped at all. It ignores the empty edit's
+ * length, so every track gets the same: other players then start everything 1 ms later, in sync.
+ * Written only when some track's edit skips media; without a skip there is nothing to misplace.
+ */
+private const val LEAD_EMPTY_EDIT = 1L
+
+/** Audio before the first video frame up to this long is skipped (see Mp4Writer.presentationZero). */
+private const val MAX_LEADING_AUDIO_SEC = 10.0

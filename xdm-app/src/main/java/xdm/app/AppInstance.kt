@@ -37,6 +37,7 @@ import xdm.core.downloaders.DownloadError
 import xdm.core.downloaders.DownloadType
 import xdm.core.downloaders.HttpDownloadTaskInfo
 import xdm.core.downloaders.web.SegmentProgress
+import xdm.core.downloaders.web.SlotProgress
 import xdm.core.util.FormatHelper.formatSize
 import xdm.core.util.Logger
 import xdm.core.util.MovePhase
@@ -110,6 +111,8 @@ interface IAppInstance {
         eta: Long,
         prg: Int,
         segData: Collection<SegmentProgress>,
+        /** The rows of the window's connection table. */
+        slots: List<SlotProgress>,
         /** A batch's file counts; null for other downloads. */
         files: BatchFileCounts? = null,
     )
@@ -128,6 +131,9 @@ interface IAppInstance {
 
     /** The XDM extension in [browser] is older than this XDM expects: asks the user to update it. */
     fun showExtensionUpdate(browser: Browser)
+
+    /** Drops [id]'s last segment bar and connection table: its session ended, or a new one starts. */
+    fun forgetProgress(id: Long)
 }
 
 class AppInstance : IAppInstance {
@@ -139,6 +145,12 @@ class AppInstance : IAppInstance {
      * no progress window open, nothing else would tell the user the file landed nowhere.
      */
     private val pendingHandoffs = ConcurrentHashMap.newKeySet<Long>()
+
+    /**
+     * EDT only. Each running download's last segment bar and connection table, for a progress window opened
+     * after they stopped coming: while assembling, updates carry neither. Dropped by [forgetProgress].
+     */
+    private val lastSegments = HashMap<Long, Pair<Collection<SegmentProgress>, List<SlotProgress>>>()
     private var refreshLinkWindow: RefreshLinkWindow? = null
 
     /** EDT only. Whether this run already told the user that macOS has XDM's notifications off. */
@@ -371,6 +383,7 @@ class AppInstance : IAppInstance {
                 prgWnd = ProgressWindow(id).apply {
                     lblFileName.text = fileName
                     title = "[ 0% ] $fileName"
+                    lastSegments[id]?.let { (segData, slots) -> showSegments(segData, slots) }
                     isVisible = true
                 }
                 prgWndMap[id] = prgWnd
@@ -388,10 +401,21 @@ class AppInstance : IAppInstance {
         eta: Long,
         prg: Int,
         segData: Collection<SegmentProgress>,
+        slots: List<SlotProgress>,
         files: BatchFileCounts?,
     ) {
         if (downloaded > 0) pendingHandoffs.remove(id)
-        runOnUIThread { prgWndMap[id]?.updateProgress(fileName, downloaded, size, speed, eta, prg, segData, files) }
+        runOnUIThread {
+            if (segData.isNotEmpty() || slots.isNotEmpty()) {
+                val last = lastSegments[id]
+                lastSegments[id] = Pair(segData.ifEmpty { last?.first ?: segData }, slots.ifEmpty { last?.second ?: slots })
+            }
+            prgWndMap[id]?.updateProgress(fileName, downloaded, size, speed, eta, prg, segData, slots, files)
+        }
+    }
+
+    override fun forgetProgress(id: Long) {
+        runOnUIThread { lastSegments.remove(id) }
     }
 
     override fun updateMoveProgress(id: Long, phase: MovePhase, prg: Int) {
@@ -424,6 +448,7 @@ class AppInstance : IAppInstance {
     override fun showProgressError(id: Long, error: DownloadError) {
         val handoff = pendingHandoffs.remove(id)
         runOnUIThread {
+            lastSegments.remove(id)
             val wnd = prgWndMap.remove(id)
             if (wnd != null) {
                 wnd.showError(error)

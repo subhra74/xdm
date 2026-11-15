@@ -2,7 +2,7 @@
 import Logger from './logger.js';
 import RequestWatcher from './request-watcher.js';
 import Connector from './connector.js';
-import { isBlockedUrl } from './blocked-sites.js';
+import { isBlockedUrl, BLOCKED_MATCH_PATTERNS } from './blocked-sites.js';
 
 const HOST_ORIGINS = ["*://*/*"];
 /** Opened once, on first install (not on updates): the next steps after adding the extension. */
@@ -11,6 +11,24 @@ const WELCOME_URL = "https://xtremedownloadmanager.com/extension/welcome/?utm_so
 const MAX_BATCH_ITEMS = 5000;
 /** Registered by the bulk picker for one "Reload & capture" only; see bulk.js. */
 const OBSERVER_SCRIPT_ID = "xdm-rt-observer";
+/**
+ * hls-hook.js (page world) and hls-relay.js (extension world): hand the HLS playlist text a player
+ * received to RequestWatcher, so XDM need not fetch a playlist link that only works once. In every
+ * frame of every page except the blocked sites, from document_start.
+ */
+const HLS_SCRIPTS = (() => {
+    const common = {
+        matches: ["http://*/*", "https://*/*"],
+        excludeMatches: BLOCKED_MATCH_PATTERNS,
+        allFrames: true,
+        runAt: "document_start",
+        persistAcrossSessions: true
+    };
+    return [
+        Object.assign({ id: "xdm-hls-hook", js: ["hls-hook.js"], world: "MAIN" }, common),
+        Object.assign({ id: "xdm-hls-relay", js: ["hls-relay.js"] }, common)
+    ];
+})();
 
 /** Oldest XDM this extension is meant for; older ones get a warning in the popup. */
 const MIN_XDM_VERSION = "9.0.9";
@@ -315,6 +333,25 @@ export default class App {
         chrome.commands.onCommand.addListener(this.onCommand.bind(this));
         // The picker removes its observer script itself, but not if its window was closed mid-reload.
         chrome.scripting.unregisterContentScripts({ ids: [OBSERVER_SCRIPT_ID] }).catch(() => { });
+        this.registerPlaylistScripts();
+    }
+
+    /**
+     * Registers HLS_SCRIPTS, or brings them up to date. Registrations outlive the worker and the
+     * browser session, and run on every worker start, so an update that changes them takes effect.
+     * They only cover documents loaded afterwards.
+     */
+    registerPlaylistScripts() {
+        const ids = HLS_SCRIPTS.map(s => s.id);
+        chrome.scripting.getRegisteredContentScripts({ ids: ids }).then(found => {
+            const have = new Set((found || []).map(s => s.id));
+            const missing = HLS_SCRIPTS.filter(s => !have.has(s.id));
+            const present = HLS_SCRIPTS.filter(s => have.has(s.id));
+            return Promise.all([
+                missing.length ? chrome.scripting.registerContentScripts(missing) : null,
+                present.length ? chrome.scripting.updateContentScripts(present) : null
+            ]);
+        }).catch(e => this.logger.log("playlist scripts not registered: " + ((e && e.message) || e)));
     }
 
     isSupportedProtocol(url) {
@@ -588,6 +625,11 @@ export default class App {
                 sendResponse({ connected: this.connector.isConnected() === true });
             });
             return true;
+        }
+        else if (request.type === "hls-body") {
+            // From hls-relay.js in a page frame; the tab comes from the sender, never the message.
+            const tabId = sender && sender.tab ? sender.tab.id : undefined;
+            this.whenReady(() => this.requestWatcher.onPlaylistBody(tabId, request.url, request.body));
         }
         else if (request.type === "batch") {
             this.sendBatch(request).then(sendResponse, err => sendResponse({ ok: false, error: err.message }));

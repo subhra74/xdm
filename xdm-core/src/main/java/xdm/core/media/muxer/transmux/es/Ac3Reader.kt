@@ -19,7 +19,7 @@ import xdm.core.util.Logger
 class Ac3Reader(private val sink: SampleSink, eac3: Boolean) : ElementaryStreamReader {
     override val track = Track(if (eac3) Codec.EAC3 else Codec.AC3)
     private val eac3 = eac3
-    private val clock = FrameClock()
+    private val clock = FrameClock(track.samples)
     private var configured = false
     /** Sampling rate of the current config (the track timescale stays the first config's). */
     private var rate = 0
@@ -142,7 +142,10 @@ class Ac3Reader(private val sink: SampleSink, eac3: Boolean) : ElementaryStreamR
             return false
         }
         if (probe.sampleRate <= 0) return false
-        val key = (probe.decoderConfigRecord ?: ByteArray(0)) + byteArrayOf((probe.sampleRate shr 8).toByte(), probe.sampleRate.toByte())
+        // dec3's data_rate (its first 13 bits) is informative: a frame of another size isn't another config.
+        val record = probe.decoderConfigRecord ?: ByteArray(0)
+        val described = if (eac3 && record.size > 2) record.copyOfRange(2, record.size) else record
+        val key = described + byteArrayOf((probe.sampleRate shr 8).toByte(), probe.sampleRate.toByte())
         if (configKey?.contentEquals(key) == true) return true
         if (!configured) {
             configure(track, buf, i)
@@ -200,8 +203,10 @@ class Ac3Reader(private val sink: SampleSink, eac3: Boolean) : ElementaryStreamR
         track.sampleRate = AC3_SAMPLE_RATES[fscod] shr maxOf(0, bsid - 8)
         track.channelCount = AC3_CHANNELS[acmod] + lfeon
         if (track.codec == Codec.EAC3) {
-            // AC-3 core of an E-AC-3 stream: the track is ec-3, so describe the core in a dec3.
-            track.decoderConfigRecord = dec3(fscod, bsid, bsmod, acmod, lfeon)
+            // AC-3 core of an E-AC-3 stream: the track is ec-3, so describe the core in a dec3 (data_rate
+            // from its bit rate code, halved/quartered with the rate for bsid 9/10, as ffmpeg).
+            val kbps = AC3_BIT_RATES.getOrElse(bitRateCode) { 0 } shr maxOf(0, bsid - 8)
+            track.decoderConfigRecord = dec3(fscod, bsid, bsmod, acmod, lfeon, kbps)
             return
         }
         // dac3: fscod(2) bsid(5) bsmod(3) acmod(3) lfeon(1) bit_rate_code(5) reserved(5)
@@ -240,8 +245,10 @@ class Ac3Reader(private val sink: SampleSink, eac3: Boolean) : ElementaryStreamR
         val bsid = bit.readBits(5)
         track.sampleRate = sr
         track.channelCount = AC3_CHANNELS[acmod] + lfeon
-        @Suppress("UNUSED_VARIABLE") val numBlocks = NUM_BLOCKS[numblkscod]
-        track.decoderConfigRecord = dec3(fscod, bsid, 0, acmod, lfeon)
+        val samples = (if (fscod == 3) 6 else NUM_BLOCKS[numblkscod]) * 256
+        // data_rate as ffmpeg writes it: the frame's bit rate in kbit/s.
+        val kbps = (eac3FrameSize(data, i).toLong() * 8 * sr / samples / 1000).toInt()
+        track.decoderConfigRecord = dec3(fscod, bsid, 0, acmod, lfeon, kbps)
     }
 
     /**
@@ -249,8 +256,8 @@ class Ac3Reader(private val sink: SampleSink, eac3: Boolean) : ElementaryStreamR
      * then fscod(2) bsid(5) reserved(1) asvc(1) bsmod(3) acmod(3) lfeon(1) reserved(3)
      * num_dep_sub(4) reserved(1).
      */
-    private fun dec3(fscod: Int, bsid: Int, bsmod: Int, acmod: Int, lfeon: Int): ByteArray {
-        val dataRate = 0 // unknown; players tolerate 0
+    private fun dec3(fscod: Int, bsid: Int, bsmod: Int, acmod: Int, lfeon: Int, dataRateKbps: Int = 0): ByteArray {
+        val dataRate = dataRateKbps.coerceIn(0, 0x1FFF)
         val b0 = (dataRate shr 5) and 0xFF
         val b1 = ((dataRate and 0x1F) shl 3) or 0 // num_ind_sub - 1 = 0
         var s = 0
@@ -277,6 +284,8 @@ class Ac3Reader(private val sink: SampleSink, eac3: Boolean) : ElementaryStreamR
         val AC3_SAMPLE_RATES = intArrayOf(48000, 44100, 32000, 0)
         val AC3_SAMPLE_RATES_HALF = intArrayOf(24000, 22050, 16000, 0)
         val NUM_BLOCKS = intArrayOf(1, 2, 3, 6)
+        /** AC-3 bit rates (kbit/s) by bit_rate_code = frmsizecod / 2 (A/52 table 5.18). */
+        val AC3_BIT_RATES = intArrayOf(32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 384, 448, 512, 576, 640)
         val AC3_CHANNELS = intArrayOf(2, 1, 2, 3, 3, 4, 4, 5) // by acmod
         // frmsizecod -> 16-bit words, columns [48k, 44.1k, 32k] (ATSC A/52 table 5.18)
         val FRAME_SIZE_TAB = arrayOf(

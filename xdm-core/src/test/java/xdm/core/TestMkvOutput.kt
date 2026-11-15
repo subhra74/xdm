@@ -4,6 +4,8 @@
 
 package xdm.core
 
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -81,7 +83,7 @@ class TestMkvOutput {
             return path.split(File.pathSeparator).map { File(it, cmd) }.firstOrNull { it.canExecute() }?.absolutePath
         }
 
-        private fun run(vararg cmd: String) {
+        fun run(vararg cmd: String) {
             val p = ProcessBuilder(*cmd).redirectErrorStream(true).start()
             val out = p.inputStream.readBytes().toString(Charsets.UTF_8)
             check(p.waitFor() == 0) { "command failed: ${cmd.joinToString(" ")}\n$out" }
@@ -241,9 +243,10 @@ class TestMkvOutput {
         val out = path("wrap.mkv")
         val writer = MkvWriter(out, workDir.path)
         val track = Track(Codec.VP9).apply { matroskaCodecId = "V_VP9"; timescale = 1000; width = 16; height = 16 }
-        // A keyframe at 40 s, then (in decode order) a frame presented at 1 s: 39 s before the cluster
-        // start, outside a block's signed 16-bit offset.
-        for ((pts, key) in listOf(40_000L to true, 1_000L to false, 40_040L to false)) {
+        // Keyframes at 0 and 40 s, then (in decode order) a frame presented at 1 s: 39 s before the
+        // cluster start, outside a block's signed 16-bit offset. (Not in the first GOP, where a frame
+        // presented before the keyframe is a leading picture and left out.)
+        for ((pts, key) in listOf(0L to true, 40_000L to true, 1_000L to false, 40_040L to false)) {
             val at = writer.writeSampleData(byteArrayOf(1, 2, 3), 0, 3)
             track.samples.add(at, 3, pts, track.samples.size.toLong() * 40, key)
         }
@@ -251,7 +254,7 @@ class TestMkvOutput {
         val d = MatroskaDemuxer(CountingSink()).also { it.parseSegment(out) }
         val s = d.tracks.single().samples
         val got = (0 until s.size).map { s.pts(it) }
-        assert(got == listOf(39_000L, 0L, 39_040L)) { "block times read back: $got" }
+        assert(got == listOf(0L, 40_000L, 1_000L, 40_040L)) { "block times read back: $got" }
     }
 
     // ---- shared timeline ----
@@ -282,6 +285,27 @@ class TestMkvOutput {
         assert(errors.isEmpty()) { "decode errors: ${errors.take(5)}" }
         val duration = probe(out, "-show_entries", "format=duration", "-of", "csv=p=0").toDoubleOrNull() ?: return
         assert(duration > 3.8) { "duration $duration: the second rendition overlaps the first" }
+    }
+
+    @Test
+    fun aacConfigChangeFromMp4InputKeepsTheLastConfigAsFfmpeg() {
+        requireFfmpeg()
+        // Audio-only fMP4 at 44.1 kHz, then at 48 kHz (another init segment, another AudioSpecificConfig).
+        for ((name, rate) in listOf("ra" to 44100, "rb" to 48000)) {
+            run(ffmpeg!!, "-y", "-loglevel", "error", "-f", "lavfi", "-i", "sine=frequency=440:sample_rate=$rate", "-t", "2",
+                "-c:a", "aac", "-f", "hls", "-hls_time", "1", "-hls_segment_type", "fmp4", "-hls_list_size", "0",
+                "-hls_fmp4_init_filename", "${name}_init.mp4", "-hls_segment_filename", path("$name%d.m4s"), path("$name.m3u8"))
+        }
+        val list = listOf(path("ra_init.mp4")) + files("ra\\d+\\.m4s") + listOf(path("rb_init.mp4")) + files("rb\\d+\\.m4s")
+        val out = path("aac_config_change.mkv")
+        mux(list, out, discontinuous = true)
+        // ffmpeg's matroskaenc rewrites CodecPrivate and SamplingFrequency at every sample-entry switch
+        // its MP4 demuxer announces: the file ends with the second config.
+        val second = probe("concat:" + path("rb_init.mp4") + "|" + files("rb\\d+\\.m4s").first(),
+            "-show_data_hash", "md5", "-show_entries", "stream=sample_rate,extradata_hash", "-of", "csv=p=0")
+        assertEquals(second, probe(out, "-show_data_hash", "md5", "-show_entries", "stream=sample_rate,extradata_hash", "-of", "csv=p=0"),
+            "CodecPrivate and rate of the last config")
+        assertTrue(second.startsWith("48000"), "the second config is 48 kHz: $second")
     }
 
     // ---- ContentEncoding ----

@@ -6,6 +6,7 @@ package xdm.core
 
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import xdm.core.media.muxer.transmux.es.AdtsReader
 import xdm.core.media.muxer.transmux.es.Ac3Reader
@@ -168,6 +169,78 @@ class TestTsPesLayouts {
         }
         r.finish()
         assertSamples(aus, r, sink, h264Aud)
+    }
+
+    /**
+     * PES cut the way Apple's segmenter cuts them: each PES starts with the previous picture's last slice
+     * (start code and all) and carries the timestamps of the picture that starts after it in that PES.
+     */
+    private fun feedCutBeforeLastSlice(reader: ElementaryStreamReader, aus: List<Au>) {
+        var carry = ByteArray(0)
+        for ((i, au) in aus.withIndex()) {
+            val nals = au.nals
+            val keep = if (i + 1 < aus.size) nals.dropLast(1) else nals
+            val body = annexB(Au(keep, 0, 0, false))
+            val pes = carry + body
+            reader.consume(pes, 0, pes.size, au.pts, au.dts)
+            carry = if (i + 1 < aus.size) annexB(Au(listOf(nals.last()), 0, 0, false)) else ByteArray(0)
+        }
+        reader.finish()
+    }
+
+    @Test
+    fun h264PesCutInsidePicturesGiveTimestampsToThePictureStartingInThem() {
+        // Two slices per picture: the second one moves into the next PES (as seen in Apple's bipbop stream).
+        for (slices in listOf(2, 1)) {
+            // One slice: the picture's only slice moves, so the next picture's AUD is the PES's last NAL unit
+            // and is completed only by the following PES.
+            val aus = h264Aus(30, slices)
+            val sink = RecordingSink(); val r = H264Reader(sink)
+            feedCutBeforeLastSlice(r, aus)
+            assertSamples(aus, r, sink, h264Aud)
+        }
+    }
+
+    /** Decode times usable by a muxer: increasing, never after the presentation time; PTS exactly as sent. */
+    private fun assertInferredDts(aus: List<Au>, r: ElementaryStreamReader, label: String) {
+        val s = r.track.samples
+        assertEquals(aus.size, s.size, "$label: one sample per access unit")
+        for (i in aus.indices) {
+            assertEquals(aus[i].pts, s[i].pts, "$label: sample $i pts unchanged")
+            assertTrue(s[i].dts <= s[i].pts, "$label: sample $i dts ${s[i].dts} after pts ${s[i].pts}")
+            if (i > 0) assertTrue(s[i].dts > s[i - 1].dts, "$label: sample $i dts ${s[i].dts} not after ${s[i - 1].dts}")
+        }
+    }
+
+    /** Real reordering: I P B B per group, PTS a frame behind for P, B shown before the P. */
+    private fun reorderedAus(count: Int): List<Au> {
+        val order = intArrayOf(0, 3, 1, 2)
+        return h264Aus(count).mapIndexed { i, au ->
+            val group = i / 4 * 4
+            val pts = 3000L * (group + order[i % 4]) + 3000
+            Au(au.nals, pts, 3000L * i, au.key)
+        }
+    }
+
+    @Test
+    fun h264PtsOnlyPesWithReorderingGetInferredDecodeTimes() {
+        val aus = reorderedAus(40)
+        val sink = RecordingSink(); val r = H264Reader(sink)
+        for (au in aus) { val b = annexB(au); r.consume(b, 0, b.size, au.pts, -1) }
+        r.finish()
+        assertInferredDts(aus, r, "PTS only")
+    }
+
+    @Test
+    fun h264DecodeTimesAfterPresentationAreInferred() {
+        // DTS = the PTS in presentation order with no reorder shift: B-frames get a DTS a frame after their PTS.
+        val base = reorderedAus(40)
+        val sorted = base.map { it.pts }.sorted()
+        val aus = base.mapIndexed { i, au -> Au(au.nals, au.pts, sorted[i], au.key) }
+        val sink = RecordingSink(); val r = H264Reader(sink)
+        for ((i, au) in aus.withIndex()) { val b = annexB(au); r.consume(b, 0, b.size, au.pts, if (i == 0) -1 else au.dts) }
+        r.finish()
+        assertInferredDts(aus, r, "late DTS")
     }
 
     @Test

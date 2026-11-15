@@ -40,6 +40,8 @@ internal object TrackMerge {
                 Track(run.track.codec).also { it.copyConfigFrom(run.track); sourceOf[it] = run.track }
             }
             val map = entryMaps.getOrPut(run.track) { entryMap(target, sourceOf[target]!!, run.track) }
+            if (run.track.compositionMayPrecedeDecode) target.compositionMayPrecedeDecode = true
+            if (run.from == 0) target.guessedTimestamps += run.track.guessedTimestamps
             val s = run.track.samples
             val from = run.track.timescale
             val to = target.timescale
@@ -49,6 +51,9 @@ internal object TrackMerge {
                     s.fileOffset(i), s.sampleSize(i), rescale(s.pts(i), from, to), rescale(s.dts(i), from, to),
                     s.isKeyframe(i), map.getOrElse(d - 1) { 1 }
                 )
+            }
+            if (run.to == s.size && run.to > run.from && s.lastDuration > 0) {
+                target.samples.lastDuration = rescale(s.lastDuration, from, to)
             }
         }
         return out.values.toList()

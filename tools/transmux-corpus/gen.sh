@@ -42,6 +42,8 @@ hls eac3          $X264 -bf 3 -c:a eac3 -b:a 192k -hls_time 4
 hls mp3           $X264 -bf 3 -c:a libmp3lame -b:a 128k -hls_time 4
 hls aac_mono_44k  $X264 -bf 3 -c:a aac -ac 1 -ar 44100 -hls_time 4
 hls video_only    $X264 -bf 3 -an -hls_time 4
+# 33-bit PTS wrap 6 s in (the mpegts muxer adds 1.4 s): B-frames with reordered PTS across it.
+hls wrap          $X264 -bf 3 -c:a aac -b:a 128k -hls_time 4 -output_ts_offset 95436.3177
 
 # Separate audio / video renditions (two playlists).
 mkdir -p "$C/separate/v" "$C/separate/a"
@@ -80,6 +82,11 @@ mk() { # mode, source variant
 mk vsplit_nopts base
 mk vsplit_pts base
 mk vsplit_small base
+mk nodts base
+mk aucut base
+mk dtslate base
+[ -d "$C/hevc8" ] && mk nodts hevc8 _hevc8
+mk nodts wrap _wrap   # PTS-only B-frames across the wrap
 mk asplit base
 mk asplit aac_mono_44k _mono
 mk pkt204 base

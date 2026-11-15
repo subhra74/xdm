@@ -24,7 +24,7 @@ import xdm.core.util.Logger
 class AdtsReader(private val sink: SampleSink) : ElementaryStreamReader {
     override val track = Track(Codec.AAC)
 
-    private val clock = FrameClock()
+    private val clock = FrameClock(track.samples)
     /** profile/frequency/channels of the frames being read; -1 before the first frame. */
     private var configKey = -1
     /** Sampling rate of the current config (the track timescale stays the first config's). */
@@ -76,7 +76,11 @@ class AdtsReader(private val sink: SampleSink) : ElementaryStreamReader {
             val freqIndex = (buf[i + 2].toInt() and 0x3C) shr 2
             val channelConfig = ((buf[i + 2].toInt() and 0x01) shl 2) or ((buf[i + 3].toInt() and 0xC0) shr 6)
             val key = (profile shl 8) or (freqIndex shl 4) or channelConfig
-            val headerLen = if (protectionAbsent == 1) 7 else 9
+            // number_of_raw_data_blocks_in_frame: a frame may carry up to 4 blocks of 1024 samples.
+            val blocks = (buf[i + 6].toInt() and 3) + 1
+            // With a CRC and several blocks, the header also holds the blocks' positions (16 bits each).
+            val headerLen = if (protectionAbsent == 1) 7 else 9 + 2 * (blocks - 1)
+            if (headerLen >= frameLength) { i++; inSync = false; continue }
             var pceBytes = 0
             if (key != configKey) {
                 pceBytes = switchConfig(key, profile, freqIndex, channelConfig, buf, i + headerLen, i + frameLength)
@@ -94,9 +98,12 @@ class AdtsReader(private val sink: SampleSink) : ElementaryStreamReader {
             // A PCE moved into the AudioSpecificConfig is taken off the frame, as ffmpeg does.
             val rawStart = i + headerLen + pceBytes
             val rawLen = frameLength - headerLen - pceBytes
-            // number_of_raw_data_blocks_in_frame: a frame may carry up to 4 blocks of 1024 samples.
-            val samples = SAMPLES_PER_FRAME.toInt() * ((buf[i + 6].toInt() and 3) + 1)
-            if (rawLen > 0) {
+            val samples = SAMPLES_PER_FRAME.toInt() * blocks
+            if (protectionAbsent == 0 && blocks > 1) {
+                // Several blocks, each followed by its CRC: one sample per block, CRCs left out (an MP4
+                // sample holds raw_data_block()s only). Positions count from the first block.
+                writeBlocks(buf, i, i + headerLen, i + frameLength, blocks, pceBytes)
+            } else if (rawLen > 0) {
                 val fileOffset = sink.writeSampleData(buf, rawStart, rawLen)
                 val ts = clock.current()
                 track.samples.add(fileOffset, rawLen, ts, ts, true, descriptionIndex)
@@ -112,6 +119,36 @@ class AdtsReader(private val sink: SampleSink) : ElementaryStreamReader {
         }
         pendingInSync = inSync
     }
+
+    /**
+     * The [blocks] raw data blocks of the ADTS frame at [frame] (CRC present), the first at [first]:
+     * each its own sample of 1024 samples, its trailing 16-bit CRC dropped. A PCE moved into the config
+     * ([pceBytes]) is taken off the first block.
+     */
+    private fun writeBlocks(buf: ByteArray, frame: Int, first: Int, end: Int, blocks: Int, pceBytes: Int) {
+        val timescale = track.timescale
+        for (b in 0 until blocks) {
+            val start = if (b == 0) first else first + u16(buf, frame + 7 + 2 * (b - 1))
+            val next = if (b == blocks - 1) end else first + u16(buf, frame + 7 + 2 * b)
+            val from = start + if (b == 0) pceBytes else 0
+            val to = next - 2
+            if (start < first || next > end || to <= from) {
+                // A position table that doesn't fit: the frame's blocks as one sample, as before.
+                Logger.info("XDM", "AAC: ADTS block positions out of range; frame kept whole")
+                val fileOffset = sink.writeSampleData(buf, first + pceBytes, end - first - pceBytes)
+                val ts = clock.current()
+                track.samples.add(fileOffset, end - first - pceBytes, ts, ts, true, descriptionIndex)
+                clock.advance(SAMPLES_PER_FRAME.toInt() * (blocks - b), rate, timescale)
+                return
+            }
+            val fileOffset = sink.writeSampleData(buf, from, to - from)
+            val ts = clock.current()
+            track.samples.add(fileOffset, to - from, ts, ts, true, descriptionIndex)
+            clock.advance(SAMPLES_PER_FRAME.toInt(), rate, timescale)
+        }
+    }
+
+    private fun u16(b: ByteArray, at: Int) = ((b[at].toInt() and 0xFF) shl 8) or (b[at + 1].toInt() and 0xFF)
 
     override fun finish() {}
 

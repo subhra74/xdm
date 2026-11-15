@@ -345,6 +345,7 @@ class MatroskaDemuxer(private val sink: SampleSink) {
     private fun parseBlockGroup(start: Long, end: Long, clusterTc: Long) {
         var blockStart = -1L; var blockEnd = -1L
         var hasReference = false
+        var discardPaddingNs = 0L
         reader.seek(start)
         while (reader.position() < end) {
             val id = reader.readId(); if (id < 0) break
@@ -352,10 +353,30 @@ class MatroskaDemuxer(private val sink: SampleSink) {
             when (id) {
                 Ebml.BLOCK -> { blockStart = ds; blockEnd = de }
                 Ebml.REFERENCE_BLOCK -> hasReference = true
+                DISCARD_PADDING -> if (size in 1..8) {
+                    // A signed integer: sign-extend from its byte length.
+                    val shift = 64 - 8 * size.toInt()
+                    discardPaddingNs = (reader.readUInt(size.toInt()) shl shift) shr shift
+                }
             }
             reader.seek(de)
         }
-        if (blockStart >= 0) parseBlock(blockStart, blockEnd, clusterTc, keyframeOverride = !hasReference)
+        if (blockStart < 0) return
+        val track = blockTrack(blockStart)
+        val before = track?.samples?.size ?: 0
+        parseBlock(blockStart, blockEnd, clusterTc, keyframeOverride = !hasReference)
+        // Audio to drop from the end of this block's last frame (Opus end trimming): kept for the Ogg
+        // writer's final granule position. Only the stream's last such block matters.
+        if (track != null && discardPaddingNs > 0 && track.samples.size > before) {
+            track.endPaddingNs = discardPaddingNs
+            track.endPaddingSample = track.samples.size - 1
+        }
+    }
+
+    /** The track a Block at [blockStart] belongs to (its first vint); the reader is moved. */
+    private fun blockTrack(blockStart: Long): Track? {
+        reader.seek(blockStart)
+        return byNumber[reader.readSize()]?.takeIf { !it.dropped }?.track
     }
 
     /** Parses a (Simple)Block: header + one or more (optionally laced) frames. */
@@ -475,3 +496,6 @@ class MatroskaDemuxer(private val sink: SampleSink) {
         else -> if (isVideo) Codec.OTHER_VIDEO else Codec.OTHER_AUDIO
     }
 }
+
+/** Matroska `DiscardPadding` (in a BlockGroup): signed ns of audio to drop from the block's end. */
+private const val DISCARD_PADDING = 0x75A2L

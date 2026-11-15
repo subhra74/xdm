@@ -111,7 +111,7 @@ maxPiece = 0, authInfo = null,
         val srt = File(out, "out-$id.en.srt")
         val text = srt.readText(Charsets.UTF_8).removePrefix("\uFEFF")
         val origin = muxer.timelineStartSec!!
-        val shiftMs = Math.round(900_000 - origin * 90_000) / 90
+        val shiftMs = Math.round((900_000 - origin * 90_000) / 90.0)
         fun t(ms: Long) = "%02d:%02d:%02d,%03d".format(ms / 3_600_000, ms / 60_000 % 60, ms / 1000 % 60, ms % 1000)
         val expected = "1\r\n${t(500 + shiftMs)} --> ${t(1000 + shiftMs)}\r\nFirst\r\n\r\n" +
             "2\r\n${t(1500 + shiftMs)} --> ${t(2000 + shiftMs)}\r\nAcross\r\n\r\n" +

@@ -88,6 +88,12 @@ import javax.swing.event.DocumentListener
  *    This is the only place tools are checked for updates and updated.
  * 3. Formats: a progress bar while yt-dlp runs, then the qualities and where to save.
  *
+ * Below every page, a notice strip ([Notice]) reports update checks and tool updates. When the
+ * dialog opens and a tool lives in XDM's tools folder, updates are checked by themselves: the first
+ * open in an app run asks GitHub; an update found is remembered for the run and offered again on
+ * every later open without asking again, while "up to date" (or a failed check) is checked again on
+ * the next open. Updates are only offered, never installed without the user's click.
+ *
  * No site is named anywhere in this dialog. An independent frame like the stream dialog
  * (docs/windows-and-modality.md). Everything runs on the EDT except yt-dlp, the size probe and the
  * tool work, whose results are dropped when the inputs changed meanwhile ([generation]) or the
@@ -111,10 +117,8 @@ class VideoDownloadDialog(private val near: Window?) : JFrame() {
     private val lblUrlStatus = JLabel(" ")
     private val btnGet = JButton(text("VD_GET"))
     private val lblVersions = JLabel(" ")
-    private val lblUpdates = JLabel(" ")
     private val btnToolsPage = JButton(text("VD_TOOLS"))
     private val btnCheck = JButton(text("VD_CHECK_UPDATES"))
-    private val btnUpdate = JButton(text("VD_UPDATE")).apply { isVisible = false }
 
     // Page 3: formats.
     private val formatCards = CardLayout()
@@ -156,6 +160,11 @@ class VideoDownloadDialog(private val near: Window?) : JFrame() {
     private var installedTools: Map<ExternalTool, InstalledTool> = emptyMap()
     private var installing = false
     private var lookingUp = false
+    private var checkingUpdates = false
+
+    /** The automatic update check runs once per dialog, after the first tool lookup. */
+    private var autoChecked = false
+    private val notice = Notice()
     private val closed = AtomicBoolean()
 
     /** Leave the tools page by itself once every tool is found; off once the user came back to it. */
@@ -201,6 +210,82 @@ class VideoDownloadDialog(private val near: Window?) : JFrame() {
         }
     }
 
+    /**
+     * The strip at the bottom of the dialog for update checks and tool updates: a message with an
+     * icon, a small bar while busy, Update when updates were found, and a close button. "Up to date"
+     * hides itself after a few seconds.
+     */
+    private inner class Notice {
+        private val icon = JLabel()
+        private val message = JLabel(" ")
+        private val bar = JProgressBar().apply {
+            isIndeterminate = true
+            preferredSize = Dimension(60.px, 4.px)
+            maximumSize = preferredSize
+        }
+        val update = JButton(text("VD_UPDATE")).apply {
+            name = "VD_NOTICE_UPDATE"
+            addActionListener { install(ExternalTool.entries.filter { canUpdate(it) }) }
+        }
+        private val close = JButton(createIcon(RemixIcon.CLOSE_LINE, 14)).apply {
+            putClientProperty("JButton.buttonType", "toolBarButton")
+            toolTipText = text("ND_CANCEL")
+            isFocusable = false
+            addActionListener { hide() }
+        }
+        private var hideTimer: javax.swing.Timer? = null
+
+        val panel = JPanel(BorderLayout(10.px, 0)).apply {
+            name = "VD_NOTICE"
+            isVisible = false
+            putClientProperty(FlatClientProperties.STYLE, "background: darken(@background,4%); arc: 10")
+            border = ScaledEmptyBorder(6, 10, 6, 6)
+            add(icon, BorderLayout.WEST)
+            add(message, BorderLayout.CENTER)
+            add(JPanel().apply {
+                isOpaque = false
+                layout = BoxLayout(this, BoxLayout.X_AXIS)
+                add(bar)
+                add(Box.createRigidArea(scaledSize(8, 0)))
+                add(update)
+                add(Box.createRigidArea(scaledSize(4, 0)))
+                add(close)
+            }, BorderLayout.EAST)
+        }
+
+        /** Message only, with a small bar; no close while work is running. */
+        fun busy(s: String) = show(s, null, busy = true)
+        fun updates(s: String) = show(s, createIcon(RemixIcon.DOWNLOAD_2_LINE, 16, Color.GRAY), offer = true)
+        fun ok(s: String) = show(s, createIcon(RemixIcon.CHECKBOX_CIRCLE_LINE, 16, Color.GRAY), autoHide = true)
+        fun error(s: String) = show(s, createIcon(RemixIcon.ERROR_WARNING_FILL, 16, MISSING))
+
+        private fun show(s: String, i: javax.swing.Icon?, busy: Boolean = false, offer: Boolean = false, autoHide: Boolean = false) {
+            hideTimer?.stop()
+            hideTimer = null
+            icon.icon = i
+            icon.isVisible = i != null
+            message.text = s
+            message.toolTipText = s
+            bar.isVisible = busy
+            update.isVisible = offer
+            close.isVisible = !busy
+            panel.isVisible = true
+            if (autoHide) hideTimer = javax.swing.Timer(NOTICE_HIDE_MS) { hide() }.apply { isRepeats = false; start() }
+            updateButtons()
+            panel.revalidate()
+        }
+
+        fun hide() {
+            hideTimer?.stop()
+            hideTimer = null
+            panel.isVisible = false
+            update.isVisible = false
+            panel.revalidate()
+        }
+
+        val offering get() = panel.isVisible && update.isVisible
+    }
+
     init {
         txtUrl.name = "VD_URL"
         lstChoices.name = "VD_QUALITY"
@@ -215,6 +300,10 @@ class VideoDownloadDialog(private val near: Window?) : JFrame() {
         cardPanel.add(createUrlPage(), PAGE_URL)
         cardPanel.add(createFormatsPage(), PAGE_FORMATS)
         contentPane.add(cardPanel, BorderLayout.CENTER)
+        contentPane.add(JPanel(BorderLayout()).apply {
+            border = ScaledEmptyBorder(6, 4, 0, 4)
+            add(notice.panel, BorderLayout.CENTER)
+        }, BorderLayout.SOUTH)
         (contentPane as JComponent).border = ScaledEmptyBorder(10, 10, 10, 10)
 
         wireEvents()
@@ -308,8 +397,7 @@ class VideoDownloadDialog(private val near: Window?) : JFrame() {
 
         p.add(JSeparator(), gbc(0, 7, 2, 1.0, GridBagConstraints.HORIZONTAL))
         lblVersions.foreground = muted()
-        p.add(lblUpdates, gbc(0, 8, 2, 1.0, GridBagConstraints.HORIZONTAL))
-        p.add(buttonRow(btnToolsPage, lblVersions, null, btnCheck, btnUpdate), gbc(0, 9, 2, 1.0, GridBagConstraints.HORIZONTAL))
+        p.add(buttonRow(btnToolsPage, lblVersions, null, btnCheck), gbc(0, 8, 2, 1.0, GridBagConstraints.HORIZONTAL))
         return p
     }
 
@@ -380,7 +468,6 @@ class VideoDownloadDialog(private val near: Window?) : JFrame() {
         btnGet.addActionListener { resolve() }
         btnToolsPage.addActionListener { autoAdvance = false; showPage(PAGE_TOOLS) }
         btnCheck.addActionListener { checkUpdates() }
-        btnUpdate.addActionListener { install(ExternalTool.entries.filter { canUpdate(it) }) }
 
         btnUpdateRetry.addActionListener { install(listOf(ExternalTool.YT_DLP), thenResolve = true) }
         lstChoices.addListSelectionListener { if (!it.valueIsAdjusting) choiceSelected() }
@@ -430,9 +517,8 @@ class VideoDownloadDialog(private val near: Window?) : JFrame() {
         toolRows.values.forEach { it.browse.isEnabled = !busy; it.path.isEnabled = !busy }
         btnGet.isEnabled = txtUrl.text.isNotBlank() && toolsReady()
         btnToolsPage.isEnabled = !installing
-        btnCheck.isEnabled = !busy
-        btnUpdate.isVisible = ExternalTool.entries.any { canUpdate(it) }
-        btnUpdate.isEnabled = !busy
+        btnCheck.isEnabled = !busy && !checkingUpdates
+        notice.update.isEnabled = !busy && !checkingUpdates
         btnUpdateRetry.isEnabled = !busy
     }
 
@@ -629,6 +715,10 @@ class VideoDownloadDialog(private val near: Window?) : JFrame() {
                     lblVersions.text = ExternalTool.entries.joinToString("  ·  ") { "${it.id} ${read[it] ?: "?"}" }
                     updateButtons()
                     if (page == PAGE_TOOLS && advance && toolsReady()) showPage(PAGE_URL)
+                    if (!autoChecked) {
+                        autoChecked = true
+                        autoCheckUpdates()
+                    }
                 }
             }, "yt-dlp-tools").apply { isDaemon = true }.start()
         }
@@ -679,26 +769,46 @@ class VideoDownloadDialog(private val near: Window?) : JFrame() {
         return f.origin == ToolOrigin.MANAGED && ToolInstaller.isNewer(installedTools[tool], l)
     }
 
+    /**
+     * The check when the dialog opens, for tools in XDM's tools folder only. Updates found earlier in
+     * this app run are offered again without asking GitHub; otherwise GitHub is asked.
+     */
+    private fun autoCheckUpdates() {
+        if (found?.values?.none { it?.origin == ToolOrigin.MANAGED } != false) return
+        sessionUpdates?.let { remembered ->
+            latest = remembered
+            val newer = ExternalTool.entries.filter { canUpdate(it) }
+            if (newer.isNotEmpty()) return notice.updates(updatesText(newer))
+            sessionUpdates = null
+        }
+        checkUpdates()
+    }
+
+    private fun updatesText(newer: List<ExternalTool>) =
+        text("VD_UPDATES_FOUND").format(newer.joinToString(", ") { "${it.id} ${latest[it]?.label}" })
+
     private fun checkUpdates() {
-        lookingUp = true
-        lblUpdates.text = text("VD_CHECKING")
-        updateButtons()
+        if (checkingUpdates) return
+        checkingUpdates = true
+        notice.busy(text("VD_CHECKING_UPDATES"))
         Thread({
             val installed = ToolInstaller.installed()
             val results = OkToolHttp().use { http ->
                 ExternalTool.entries.associateWith { tool -> runCatching { ToolInstaller.latest(tool, http) } }
             }
             SwingUtilities.invokeLater {
-                lookingUp = false
+                checkingUpdates = false
                 if (!isDisplayable) return@invokeLater
                 installedTools = installed
                 latest = results.mapNotNull { (k, v) -> v.getOrNull()?.let { k to it } }.toMap()
                 val failure = results.values.firstNotNullOfOrNull { it.exceptionOrNull() }
                 val newer = ExternalTool.entries.filter { canUpdate(it) }
-                lblUpdates.text = when {
-                    failure != null -> text("VD_CHECK_FAILED").format(failure.message ?: failure.javaClass.simpleName)
-                    newer.isNotEmpty() -> text("VD_UPDATES_FOUND").format(newer.joinToString(", ") { "${it.id} ${latest[it]?.label}" })
-                    else -> text("VD_UP_TO_DATE")
+                // Remembered for the app run only when there is something to offer.
+                sessionUpdates = latest.takeIf { newer.isNotEmpty() }
+                when {
+                    newer.isNotEmpty() -> notice.updates(updatesText(newer))
+                    failure != null -> notice.error(text("VD_CHECK_FAILED").format(failure.message ?: failure.javaClass.simpleName))
+                    else -> notice.ok(text("VD_UP_TO_DATE"))
                 }
                 updateButtons()
             }
@@ -712,12 +822,15 @@ class VideoDownloadDialog(private val near: Window?) : JFrame() {
     private fun install(tools: List<ExternalTool>, thenResolve: Boolean = false) {
         if (tools.isEmpty() || installing) return
         installing = true
+        // Installs from the tools page report in its rows; updates report in the notice strip.
+        val report = page != PAGE_TOOLS
+        if (report) notice.busy(tools.joinToString(", ") { it.id } + ": " + text("VD_CHECKING"))
         updateButtons()
         val cancelled = AtomicBoolean()
         val status = { tool: ExternalTool, s: String ->
             SwingUtilities.invokeLater {
                 toolRows.getValue(tool).status.apply { text = s; foreground = muted(); toolTipText = s }
-                lblUpdates.text = "${tool.id}: $s"
+                if (report && isDisplayable) notice.busy("${tool.id}: $s")
                 if (thenResolve) lblLoading.text = "${tool.id}: $s"
             }
         }
@@ -754,13 +867,13 @@ class VideoDownloadDialog(private val near: Window?) : JFrame() {
             SwingUtilities.invokeLater {
                 installing = false
                 if (!isDisplayable) return@invokeLater
-                val msg = failed ?: " "
-                lblInstall.text = msg
-                lblUpdates.text = msg
+                lblInstall.text = failed ?: " "
+                if (failed != null && report) notice.error(failed!!)
                 if (failed != null && thenResolve) showProblem(failed!!)
                 // A finished install on the tools page moves on, as the first lookup would have.
                 refreshTools(advance = failed == null)
-                if (latest.isNotEmpty()) checkUpdates()
+                // Checking again shows "up to date" and forgets the update offered for this app run.
+                if (latest.isNotEmpty()) checkUpdates() else if (failed == null && report) notice.hide()
                 if (thenResolve && failed == null) waitForToolsThenResolve()
             }
         }, "yt-dlp-install").apply { isDaemon = true }.start()
@@ -844,6 +957,13 @@ class VideoDownloadDialog(private val near: Window?) : JFrame() {
         private const val ROW_CHECKING = "checking"
         private const val ROW_READY = "ready"
         private val MISSING = Color(0xD9, 0x53, 0x4F)
+        private const val NOTICE_HIDE_MS = 5000
+
+        /**
+         * The latest releases from a check in this app run that found an update, so later opens offer
+         * it without asking GitHub again; null when the last check found none or failed. EDT only.
+         */
+        private var sessionUpdates: Map<ExternalTool, ToolRelease>? = null
         private const val DIALOG_WIDTH = 720
         private const val DIALOG_HEIGHT = 560
         private const val MIN_WIDTH = 560

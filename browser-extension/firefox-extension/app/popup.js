@@ -90,6 +90,14 @@ class VideoPopup {
             document.getElementById("previewsToggle").hidden = true;
         }
 
+        // YouTube (blocked-sites.js): nothing is captured there, so explain that instead of
+        // inviting the user to play a video, and offer no bulk picker.
+        if (response.blockedSite) {
+            document.getElementById('blockedSite').hidden = false;
+            document.getElementById('bulk').disabled = true;
+            return;
+        }
+
         const list = response.list || [];
         this.items = list;
         this.renderList(list);

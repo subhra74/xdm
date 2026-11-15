@@ -112,7 +112,8 @@ object LongStreamMain {
             var a = 0L
             for (i in 0 until frames) {
                 val dts = 3000L * i
-                val pts = dts + if (i % 3 == 0) 6000 else 3000
+                // I P B: decoded 0 1 2, presented 0 2 1, one frame behind decode.
+                val pts = 3000L * ((i / 3) * 3 + intArrayOf(0, 2, 1)[i % 3]) + 3000
                 video.samples.add(w.writeSampleData(one, 0, 1), 5000 + i % 7000, pts, dts, i % 60 == 0)
                 while (a < audioFrames && a * 1024 * 90000 / 48000 <= dts) {
                     val t = a * 1024

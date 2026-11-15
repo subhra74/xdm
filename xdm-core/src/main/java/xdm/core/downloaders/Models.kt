@@ -5,6 +5,7 @@
 package xdm.core.downloaders
 
 import xdm.core.downloaders.web.SegmentProgress
+import xdm.core.downloaders.web.SlotProgress
 import xdm.core.downloaders.web.streaming.manifest.dash.DashSegment
 import xdm.core.network.http.HeaderMap
 import xdm.core.util.StableId
@@ -180,6 +181,12 @@ data class HlsDownloadTaskInfo(
     var subtitles: List<SubtitleTrack> = emptyList(),
     /** As [HttpDownloadTaskInfo.extractor]. */
     var extractor: ExtractorSource? = null,
+    /**
+     * Keep the stream's own format where it can be kept as it is: TS segments joined (or merged with
+     * a separate audio rendition) into one `.ts` at packet level instead of remuxed into MP4. Other
+     * formats are remuxed as usual. False: remux into MP4 (MKV when WebM is involved).
+     */
+    var keepOriginalFormat: Boolean = false,
 ) : StreamingDownloadTaskInfo(
     id,
     fileName,
@@ -328,6 +335,8 @@ sealed interface DownloadStatusInfo {
         var eta: Long = 0,
         var downloaded: Long = 0,
         var segments: Collection<SegmentProgress> = listOf(),
+        /** The connection slots for the progress window's table; see [xdm.core.downloaders.web.ConnectionSlots]. */
+        var slots: List<SlotProgress> = listOf(),
         /** Batch only: files finished, files failed and files in the batch. Zero for other types. */
         var filesDone: Int = 0,
         var failedFiles: Int = 0,

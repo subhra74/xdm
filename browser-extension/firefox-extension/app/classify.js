@@ -121,6 +121,11 @@ function categoryFromMime(mime) {
  * in, or null when it must never be offered (scripts and stylesheets).
  */
 export function classify(item) {
+    // Links into YouTube are never offered (blocked-sites.js, loaded as a classic script by
+    // bulk.html), from whatever page they are on.
+    if (isBlockedUrl(item.url)) {
+        return null;
+    }
     // A download="name.ext" hint counts when the URL itself says nothing ("/get?id=42").
     const ext = extensionOf(item.url) || (item.name ? extensionOf("http://x/" + encodeURIComponent(item.name)) : "");
     const sources = item.sources || [];

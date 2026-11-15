@@ -141,6 +141,8 @@ class AdvancedConfigPanel : SettingsPanel() {
     /** Opens the folder with this and the last few launches' logs, for a bug report. */
     private fun openLogs() {
         val dir = xdm.core.util.Logger.logFolder ?: return
+        // The current launch's log is buffered: write it out so the file the user opens is complete.
+        xdm.core.util.Logger.flush()
         runCatching { xdm.app.utils.openFolderExternal(null, dir.absolutePath) }
             .onFailure { xdm.core.util.Logger.error("Could not open the logs folder $dir", it) }
     }

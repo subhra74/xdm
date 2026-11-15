@@ -373,6 +373,11 @@ class App {
     // For the context menu only: those links were never requested by the browser, so there is no
     // observed request to replay and the cookies have to be looked up instead.
     triggerDownload(url, file, referer, size, mime) {
+        // Nothing is taken from YouTube (blocked-sites.js), nor from a link on one of its pages.
+        if (isBlockedUrl(url) || isBlockedUrl(referer)) {
+            this.logger.log("Not sending a link from a blocked site: " + url);
+            return;
+        }
         chrome.cookies.getAll({ "url": url }, cookies => {
             let cookieStr = undefined;
             if (cookies) {
@@ -420,13 +425,16 @@ class App {
                 chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
                     let tabId = (tabs && tabs[0]) ? tabs[0].id + "" : this.activeTabId;
                     this.activeTabId = tabId;
+                    // On YouTube the popup says XDM stays out, and offers no bulk picker.
+                    let blocked = !!(tabs && tabs[0] && isBlockedUrl(tabs[0].url));
                     sendResponse({
                         enabled: this.isMonitoringEnabled(),
                         connected: this.connector.isConnected() === true,
                         outdated: this.connector.isConnected() === true && isOutdatedXdm(this.xdmVersion),
                         xdmVersion: this.xdmVersion,
                         updateUrl: XDM_DOWNLOAD_URL,
-                        list: this.videosForTab(tabId)
+                        blockedSite: blocked,
+                        list: blocked ? [] : this.videosForTab(tabId)
                     });
                 });
             });

@@ -11,9 +11,13 @@ import xdm.core.media.muxer.transmux.mp4.SampleEntries
 import xdm.core.media.muxer.transmux.sample.Codec
 import xdm.core.media.muxer.transmux.sample.DisplayMatrix
 import xdm.core.media.muxer.transmux.sample.Sample
+import xdm.core.media.muxer.transmux.sample.RemuxCheck
+import xdm.core.media.muxer.transmux.sample.RemuxCheckException
 import xdm.core.media.muxer.transmux.sample.Timeline
 import xdm.core.media.muxer.transmux.sample.Track
 import xdm.core.media.muxer.transmux.sample.upperMedian
+import xdm.core.media.muxer.transmux.sample.leadingWindow
+import xdm.core.media.muxer.transmux.sample.presentationStart
 import xdm.core.util.Logger
 import xdm.core.storage.LocalStorage
 import xdm.core.storage.RandomAccessOutput
@@ -50,6 +54,7 @@ class MkvWriter(
     constructor(outputPath: String, spoolDir: String? = null) : this(LocalStorage.file(outputPath), spoolDir)
 
     override var repairTimeline: Boolean = false
+    override var remuxCheckFallback: (() -> Boolean)? = null
 
     /**
      * Scratch copy of the sample data, read back at random: in [spoolDir] when given, otherwise next to
@@ -106,6 +111,11 @@ class MkvWriter(
 
         // The shared timeline step (as in the MP4 writer): sections back to back, jumps repaired.
         Timeline.prepare(plans.map { it.track }, repairTimeline)
+        try {
+            RemuxCheck.review(plans.map { it.track }, mp4 = false, remuxCheckFallback)
+        } catch (ex: RemuxCheckException) {
+            spoolFile.delete(); throw ex
+        }
 
         // Normalize all tracks to a common zero so no absolute Matroska timecode is negative.
         var globalMinMs = Long.MAX_VALUE
@@ -113,6 +123,7 @@ class MkvWriter(
         for (p in plans) {
             val s = p.track.samples
             for (i in 0 until s.size) {
+                if (p.leftOut(i)) continue
                 globalMinMs = minOf(globalMinMs, msOf(s.pts(i), p.track.timescale))
                 endMs = maxOf(endMs, msOf(s.pts(i) + s.duration(i).coerceAtLeast(0), p.track.timescale))
             }
@@ -288,7 +299,9 @@ class MkvWriter(
                     uint(Ebml.TRACK_UID, p.trackNumber.toLong())
                     uint(Ebml.TRACK_TYPE, if (t.codec.isVideo) Ebml.TRACK_TYPE_VIDEO else Ebml.TRACK_TYPE_AUDIO)
                     uint(Ebml.FLAG_LACING, 0)
-                    str(Ebml.LANGUAGE, "und")
+                    // Only the first track of each type is the default, so a player picks one audio track.
+                    if (plans.first { it.track.codec.isVideo == t.codec.isVideo } !== p) uint(Ebml.FLAG_DEFAULT, 0)
+                    str(Ebml.LANGUAGE, t.language ?: "und")
                     str(Ebml.CODEC_ID, p.codecId)
                     // The frame duration, as ffmpeg writes it: players use it for the last frame and
                     // for frames without a following one (VLC buffers a second longer without it).
@@ -358,6 +371,7 @@ class MkvWriter(
             val p = plans[best]
             val samples = p.track.samples
             val first = cursors[best]++
+            if (p.leftOut(first)) continue
             var size = samples.sampleSize(first)
             if (p.pcm) {
                 // MP4 stores PCM one audio frame per sample: join the frames that follow each other in
@@ -462,6 +476,15 @@ class MkvWriter(
         val dolbyVision: DolbyVisionConfig?
     ) {
         val pcm = codecId.startsWith("A_PCM/")
+        /** After [Timeline.prepare]: where the track's presentation starts (video: its first keyframe). */
+        private val start by lazy { presentationStart(track) }
+        private val leading by lazy { leadingWindow(track) }
+
+        /**
+         * A leading picture presented before the first keyframe (RASL, open-GOP B-frames): MP4 hides it
+         * behind the edit list; Matroska has none, so it is left out.
+         */
+        fun leftOut(i: Int) = i < leading && track.samples.pts(i) < start
     }
 
     /** A DOVIDecoderConfigurationRecord and the box type (dvcC/dvvC/dvwC) it came in. */
@@ -470,8 +493,11 @@ class MkvWriter(
     /** Resolves the Matroska CodecID + CodecPrivate for [t], or null if it can't be mapped. */
     private fun resolveCodec(t: Track): Pair<String, ByteArray?>? {
         if (t.additionalSampleEntries.isNotEmpty()) {
-            // Matroska has one CodecPrivate per track; samples in later configs keep the first one.
-            Logger.error("XDM", "MKV: track changes codec config mid-stream; using the first one")
+            // Matroska has one CodecPrivate per track. As ffmpeg's matroskaenc (mkv_check_new_extra_data):
+            // video keeps the first (later parameter sets travel in-band); AAC and FLAC from an MP4 input,
+            // whose demuxer announces every sample-entry switch as new extradata, end up with the last
+            // config (CodecPrivate and SamplingFrequency rewritten each time); see lastAudioConfig.
+            Logger.error("XDM", "MKV: track changes codec config mid-stream; one CodecPrivate is kept")
         }
         // 1) Verbatim passthrough from a Matroska/WebM input.
         t.matroskaCodecId?.let { return it to t.decoderConfigRecord }
@@ -497,8 +523,24 @@ class MkvWriter(
         }
 
         // 3) MP4 sample entry copied verbatim (OTHER_VIDEO/OTHER_AUDIO): map by its fourcc.
-        t.sampleEntryBox?.let { return fromSampleEntry(t, it) }
+        t.sampleEntryBox?.let { first -> return lastAudioConfig(t) ?: fromSampleEntry(t, first) }
         return null
+    }
+
+    /**
+     * AAC or FLAC from an MP4 input whose sample entry changes: the config of the entry in effect at the
+     * end, with its sampling frequency (ffmpeg rewrites CodecPrivate and SamplingFrequency at every
+     * switch, so its file ends with the last one); null otherwise (the first entry is used).
+     */
+    private fun lastAudioConfig(t: Track): Pair<String, ByteArray?>? {
+        if (t.codec.isVideo || t.additionalSampleEntries.isEmpty() || t.samples.isEmpty()) return null
+        val index = t.samples.descriptionIndex(t.samples.size - 1)
+        if (index <= 1) return null
+        val entry = t.additionalSampleEntries.getOrNull(index - 2) ?: return null
+        val mapped = fromSampleEntry(t, entry) ?: return null
+        if (mapped.first != "A_AAC" && mapped.first != "A_FLAC") return null
+        SampleEntries.audioInfo(entry)?.let { if (it.sampleRate > 0) t.sampleRate = it.sampleRate }
+        return mapped
     }
 
     /** Builds a codec box via [body] and returns its payload (box contents, without size+type). */

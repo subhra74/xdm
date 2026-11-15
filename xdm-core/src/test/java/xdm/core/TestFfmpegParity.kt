@@ -117,13 +117,16 @@ class TestFfmpegParity {
     @Test
     fun h264DataPartitionsBAndCStayInTheirPicture() {
         val r = H264Reader(RecordingSink())
-        for (i in 0 until 4) {
+        // An IDR picture first: pictures before the first keyframe are dropped, as ffmpeg's stream copy does.
+        val idr = annexB(byteArrayOf(0x65, 0x88.toByte()) + body(50))
+        r.consume(idr, 0, idr.size, 0, 0)
+        for (i in 1..4) {
             // DPA starts the picture; DPB/DPC begin with slice_id (here 0, which reads like first_mb 0).
             val au = annexB(byteArrayOf(0x22, 0x88.toByte()) + body(50), byteArrayOf(0x23, 0x80.toByte()) + body(50), byteArrayOf(0x24, 0x80.toByte()) + body(50))
             r.consume(au, 0, au.size, 3000L * i, 3000L * i)
         }
         r.finish()
-        assertEquals(4, r.track.samples.size, "partitions B and C don't start pictures")
+        assertEquals(5, r.track.samples.size, "partitions B and C don't start pictures")
     }
 
     private fun boxPayload(file: File, type: String): ByteArray? {
@@ -167,6 +170,8 @@ class TestFfmpegParity {
         }
         val f = writeVideo(t, "high.mp4")
         assertArrayEquals(byteArrayOf(0, 0, 0, 4, 0, 0, 0, 3), boxPayload(f, "pasp"), "pasp 4:3")
+        t.sarNum = 1024; t.sarDen = 1024
+        assertArrayEquals(byteArrayOf(0, 0, 0, 1, 0, 0, 0, 1), boxPayload(writeVideo(t, "high11.mp4"), "pasp"), "pasp reduced, as ffmpeg")
         assertArrayEquals("nclx".toByteArray() + byteArrayOf(0, 9, 0, 16, 0, 9, 0), boxPayload(f, "colr"), "colr BT.2020 / PQ")
         val avcC = boxPayload(f, "avcC")!!
         assertArrayEquals(byteArrayOf(0xFD.toByte(), 0xF8.toByte(), 0xF8.toByte(), 0), avcC.copyOfRange(avcC.size - 4, avcC.size), "High-profile avcC extension: 4:2:0, 8-bit, no SPS ext")
@@ -187,7 +192,7 @@ class TestFfmpegParity {
         assertEquals(0xFD, hvcC[16].toInt() and 0xFF, "chroma 4:2:0")
         assertEquals(0xFA, hvcC[17].toInt() and 0xFF, "10-bit luma"); assertEquals(0xFA, hvcC[18].toInt() and 0xFF, "10-bit chroma")
         assertEquals((2 shl 3) or (1 shl 2) or 3, hvcC[21].toInt() and 0xFF, "temporal layers, nesting, 4-byte lengths")
-        assertEquals(32, hvcC[23].toInt() and 0xFF, "array_completeness 0 for hev1 (VPS array)")
+        assertEquals(0x80 or 32, hvcC[23].toInt() and 0xFF, "array_completeness 1 for hvc1 (VPS array)")
     }
 
     @Test

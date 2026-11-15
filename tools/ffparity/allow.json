@@ -1,0 +1,127 @@
+[
+  {
+    "check": "*.garbage.shared",
+    "cases": [
+      "*opengop_splice*"
+    ],
+    "status": "open",
+    "decision": "D12",
+    "reason": "Leading pictures at an open-GOP splice (HEVC RASL, H.264 B-frames before a recovery-point I) reference the other clip: a strict or hardware decoder shows them corrupted. ffmpeg's file has exactly the same frames. Dropping them, or an end-of-sequence NAL before the splice, would be better than ffmpeg; not decided."
+  },
+  {
+    "check": "layout.moov",
+    "status": "deliberate",
+    "decision": "D10",
+    "reason": "moov after mdat: downloads are played from a local file, where its position doesn't matter (decided 2026-11-14); ffmpeg's +faststart rewrites the file to put it first."
+  },
+  {
+    "check": "*.placement.disc",
+    "status": "deliberate",
+    "decision": "D4",
+    "reason": "After a discontinuity ffmpeg puts the new section at the last decode time it read, so frames of the two sections overlap (duplicate presentation times). The transmuxer places sections end to end, every track by the same amount (A/V sync inside a section is kept; av.sync checks it)."
+  },
+  {
+    "check": "*.samples.ffmpeg-overlap",
+    "status": "deliberate",
+    "decision": "D4b",
+    "reason": "At a splice whose timestamps step back (open GOP: hevc_opengop_splice), ffmpeg notices the jump only at the first packet more than 100 ms behind (here an audio one): the video frames read before it keep their times, their decode times are clamped onto one value and they are shown on top of the previous clip's last frames. The transmuxer shifts the whole section, every track by the same amount: no overlap."
+  },
+  {
+    "check": "*.placement",
+    "refs": [
+      "concat"
+    ],
+    "status": "deliberate",
+    "decision": "D4",
+    "reason": "The concat demuxer starts each segment where the previous one ended by its probed duration, not by its timestamps: about one B-frame delay (80 ms at 25 fps with 2 B-frames) is added at every segment boundary, and audio and video drift apart when segments don't start on a keyframe. The transmuxer keeps the stream's own timestamps, as the concatf reference (the app's command) does."
+  },
+  {
+    "check": "av.*",
+    "refs": [
+      "concat"
+    ],
+    "cases": [
+      "midgop_start",
+      "separate_av",
+      "eac3_separate_ts",
+      "packed_*"
+    ],
+    "status": "deliberate",
+    "decision": "D4",
+    "reason": "Same concat demuxer placement: per-segment durations drift audio against video (219 ms over 7 segments in midgop_start), and each list of separate renditions drifts on its own (one E-AC-3 frame, 32 ms, in eac3_separate_ts). Timing parity for these is checked against concatf."
+  },
+  {
+    "check": "av.offset.inputs",
+    "status": "deliberate",
+    "decision": "D7",
+    "reason": "Separate video and audio renditions share one timeline in HLS/DASH; the transmuxer keeps the offset their timestamps give (as players do). ffmpeg starts each input at 0, which loses it."
+  },
+  {
+    "check": "*.entry.count",
+    "status": "deliberate",
+    "decision": "D5b",
+    "reason": "A video config change (resolution, profile, bit depth) gets a sample entry of its own: AVFoundation is set up from the entry and stops decoding at an in-band change (res_change_ts: 151 of 300 frames with ffmpeg's single entry, all 300 with ours). Media Foundation and GStreamer take either."
+  },
+  {
+    "check": "*.samples.entry",
+    "status": "deliberate",
+    "decision": "D5b",
+    "reason": "Samples after a config change point at its own sample entry (see *.entry.count)."
+  },
+  {
+    "check": "*.entry.fourcc",
+    "status": "deliberate",
+    "decision": "D6",
+    "reason": "HEVC is written as hvc1 (ffmpeg's default is hev1): AVFoundation refuses hev1 ('Cannot Decode'); Media Foundation and GStreamer take either."
+  },
+  {
+    "check": "*.samples.missing.section-start",
+    "status": "deliberate",
+    "decision": "D1b",
+    "reason": "Frames before the first keyframe of a section (after a playlist discontinuity) are dropped, as at the stream's start: they reference the other content, AVFoundation stops decoding at them and other players show garbage. ffmpeg's stream copy drops them only at the start."
+  },
+  {
+    "check": "*.lost.section-start",
+    "status": "deliberate",
+    "decision": "D1b",
+    "reason": "The source frames a normal decode shows before a section's first keyframe are decoded against the other content's pictures; ours drops them (see *.samples.missing.section-start)."
+  },
+  {
+    "check": "audio.samples.changed.*",
+    "refs": [
+      "concatf"
+    ],
+    "cases": [
+      "packed_*"
+    ],
+    "status": "deliberate",
+    "decision": "D8",
+    "reason": "Packed audio joined byte for byte (concatf) puts each segment's ID3 tag between audio frames; ffmpeg's raw-audio demuxer reads those bytes as audio, so the frame at each segment boundary differs from the source in ffmpeg's file. Ours skips the tag: every sample is byte-identical to the source frames (checked for packed_eac3: 188/188, ffmpeg's 186/188)."
+  },
+  {
+    "check": "video.config.avcC",
+    "refs": [
+      "concat",
+      "concatf"
+    ],
+    "cases": [
+      "pk_*"
+    ],
+    "status": "deliberate",
+    "decision": "D5",
+    "reason": "Packagers (Bento4 mp42hls, GStreamer mpegtsmux, nginx-vod-module) repeat the SPS/PPS in every keyframe; ffmpeg puts the same SPS and PPS (identical bytes) into avcC twice. Ours lists each once: the parameter sets in effect at the first keyframe, one per type and id (D5). Every frame matches the source."
+  },
+  {
+    "check": "audio.samples.missing.leading",
+    "refs": [
+      "concat",
+      "concatf"
+    ],
+    "cases": [
+      "pk_gstreamer_*"
+    ],
+    "status": "deliberate",
+    "decision": "D14",
+    "reason": "GStreamer's audio starts 23 ms before the first video frame. Ours starts at the first video frame and skips that audio with its edit's media_time (the samples stay in the file); ffmpeg starts at the audio and delays the video with an empty edit, which Media Foundation ignores (the video plays early there)."
+  }
+]

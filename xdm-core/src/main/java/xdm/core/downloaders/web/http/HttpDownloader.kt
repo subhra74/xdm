@@ -330,6 +330,7 @@ class HttpDownloaderTask : ChunkController {
                     reportFailure(DownloadError.DiskSpaceError)
                     return
                 }
+                reportFinished()
                 context.completed.set(true)
                 // Closed before the publish: Windows cannot rename a file that is open, and the scan the
                 // close triggers is the one scan of the whole file.
@@ -820,6 +821,7 @@ class HttpDownloaderTask : ChunkController {
                 this.eta = progressTracker.eta
                 this.speed = progressTracker.downloadSpeed
                 this.segments = progressTracker.segmentData
+                this.slots = progressTracker.slotData
             }
         }
         context.downloaded.addAndGet(downloaded)
@@ -877,6 +879,25 @@ class HttpDownloaderTask : ChunkController {
     }
 
     private val flushLock = Any()
+
+    /**
+     * All chunks are on disk: sends their final state at once (the once-a-second updates may have missed the
+     * last ones), so the window's table shows every slot finished while the file is published.
+     */
+    private fun reportFinished() {
+        context.read {
+            progressTracker.finish(context.chunks)
+            prgInfo.apply {
+                this.progress = 100
+                this.downloaded = progressTracker.totalDownloadedBytes
+                this.speed = 0f
+                this.eta = 0
+                this.segments = progressTracker.segmentData
+                this.slots = progressTracker.slotData
+            }
+        }
+        context.downloadHost.onDownloadProgress(prgInfo)
+    }
 
     private fun finishDownload() {
         if (!context.piecesMakeUpFile()) {
