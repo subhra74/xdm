@@ -16,6 +16,7 @@ import xdm.app.utils.windowIconImages
 import xdm.app.utils.px
 import xdm.core.downloaders.DownloadError
 import xdm.core.downloaders.web.SegmentProgress
+import xdm.core.downloaders.web.SlotProgress
 import xdm.core.downloaders.web.http.ChunkStatus
 import xdm.core.util.FormatHelper.formatSize
 import xdm.core.util.FormatHelper.toLongEta
@@ -52,8 +53,9 @@ import javax.swing.table.DefaultTableCellRenderer
  * ```
  *
  * More/Less shows or hides the table below the buttons, adding [MORE_HEIGHT] px; the choice is remembered
- * ([xdm.app.IAppConfig.progressMore]). The table has a row per connection slot ([SegmentTableModel]), so it
- * never has more rows than the most segments live at once; the bar above shows all of them.
+ * ([xdm.app.IAppConfig.progressMore]). The table has a row per connection slot, which the download's progress
+ * tracker keeps ([xdm.core.downloaders.web.ConnectionSlots]): never more rows than the most segments live at
+ * once, each with the bytes of every segment that used it; the bar above shows all the segments.
  */
 class ProgressWindow(val id: Long) : JFrame() {
     private companion object {
@@ -126,6 +128,7 @@ class ProgressWindow(val id: Long) : JFrame() {
         eta: Long,
         prg: Int,
         segData: Collection<SegmentProgress>,
+        slots: List<SlotProgress>,
         files: BatchFileCounts? = null,
     ) {
         // Muxing reports progress through the same call, with [prg] as the assembling percent and no segments.
@@ -169,12 +172,16 @@ class ProgressWindow(val id: Long) : JFrame() {
             lblStat4.text = "---"
         }
         this.prg.value = prg
-        // The bar and the table keep the last download state while assembling.
-        if (!assembling) {
-            segPanel.setValues(segData)
-            segModel.update(segData)
-        }
+        // Not decided by [assembling]: that is the record's status now, and the download's last update (all
+        // slots finished) often reaches this thread after the status has already turned to assembling.
+        showSegments(segData, slots)
         windowProgressTaskbar?.setWindowProgressValue(this, prg)
+    }
+
+    /** The bar and the table; an update without them (assembling, muxing) keeps the last ones. */
+    fun showSegments(segData: Collection<SegmentProgress>, slots: List<SlotProgress>) {
+        if (segData.isNotEmpty()) segPanel.setValues(segData)
+        segModel.update(slots)
     }
 
     private val textBuf = StringBuilder(100)
@@ -405,32 +412,16 @@ class ProgressWindow(val id: Long) : JFrame() {
 }
 
 /**
- * One row per connection slot, numbered 1 to the most segments that were live at once. A segment that
- * stops being live keeps its row, shown finished (or failed), until a newly started segment takes the
- * row over; so with 8 connections the table holds 8 rows to the end, the last ones finished.
+ * The connection slots the download's tracker keeps ([xdm.core.downloaders.web.ConnectionSlots]), one row each,
+ * numbered 1..n. An update without slots (assembling, stopping, a download type without them) keeps the rows.
  */
 internal class SegmentTableModel : AbstractTableModel() {
-    private class Slot(val id: Long, var status: ChunkStatus, var bytes: Long, var live: Boolean)
-
     private val columns = arrayOf("#", text("TW_STATUS"), text("TW_DOWNLOADED"))
-    private val slots = ArrayList<Slot>()
+    private var slots: List<SlotProgress> = emptyList()
 
-    fun update(segments: Collection<SegmentProgress>) {
-        val byId = segments.associateBy { it.id }
-        for (slot in slots) {
-            val s = byId[slot.id]
-            if (s != null) slot.bytes = s.bytes
-            slot.live = s?.live == true
-            // Gone from the list (a part merged into its neighbour) counts as done too.
-            slot.status = if (s == null || (!s.live && s.status != ChunkStatus.Failed)) ChunkStatus.Finished else s.status
-        }
-        val shown = slots.filter { it.live }.mapTo(HashSet()) { it.id }
-        for (s in segments) {
-            if (!s.live || !shown.add(s.id)) continue
-            val slot = Slot(s.id, s.status, s.bytes, live = true)
-            val free = slots.indexOfFirst { !it.live }
-            if (free >= 0) slots[free] = slot else slots += slot
-        }
+    fun update(slots: List<SlotProgress>) {
+        if (slots.isEmpty()) return
+        this.slots = slots
         fireTableDataChanged()
     }
 
@@ -449,7 +440,7 @@ internal class SegmentTableModel : AbstractTableModel() {
                     ChunkStatus.Ready -> "SEG_CONNECTING"
                     ChunkStatus.Downloading -> "STAT_DOWNLOADING"
                     ChunkStatus.Failed -> "STAT_FAILED"
-                    else -> "STAT_FINISHED"
+                    else -> "SEG_COMPLETED"
                 }
             )
             else -> formatSize(s.bytes.toDouble())

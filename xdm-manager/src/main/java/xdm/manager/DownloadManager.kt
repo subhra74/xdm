@@ -291,7 +291,8 @@ class DownloadManager(
                 }
                 ui.downloadUpdated(event.id)
                 ui.progress(
-                    event.id, fileName, event.downloaded, size, event.speed, event.eta, event.progress, event.segments,
+                    event.id, fileName, event.downloaded, size, event.speed, event.eta, event.progress,
+                    event.segments, event.slots,
                     if (event.filesTotal > 0) BatchFileCounts(event.filesDone, event.failedFiles, event.filesTotal) else null
                 )
                 event.torrent?.let { ui.torrentProgress(event.id, it) }

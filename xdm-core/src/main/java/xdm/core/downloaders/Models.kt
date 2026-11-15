@@ -5,6 +5,7 @@
 package xdm.core.downloaders
 
 import xdm.core.downloaders.web.SegmentProgress
+import xdm.core.downloaders.web.SlotProgress
 import xdm.core.downloaders.web.streaming.manifest.dash.DashSegment
 import xdm.core.network.http.HeaderMap
 import xdm.core.util.StableId
@@ -334,6 +335,8 @@ sealed interface DownloadStatusInfo {
         var eta: Long = 0,
         var downloaded: Long = 0,
         var segments: Collection<SegmentProgress> = listOf(),
+        /** The connection slots for the progress window's table; see [xdm.core.downloaders.web.ConnectionSlots]. */
+        var slots: List<SlotProgress> = listOf(),
         /** Batch only: files finished, files failed and files in the batch. Zero for other types. */
         var filesDone: Int = 0,
         var failedFiles: Int = 0,

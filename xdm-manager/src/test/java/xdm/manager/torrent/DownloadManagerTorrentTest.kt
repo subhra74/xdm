@@ -14,6 +14,7 @@ import xdm.core.downloaders.TaskInfoDB
 import xdm.core.downloaders.TorrentDownloadTaskInfo
 import xdm.core.downloaders.TorrentPhase
 import xdm.core.downloaders.web.SegmentProgress
+import xdm.core.downloaders.web.SlotProgress
 import xdm.core.network.http.HttpAuth
 import xdm.core.util.MovePhase
 import xdm.manager.BatchFileCounts
@@ -458,7 +459,7 @@ class DownloadManagerTorrentTest {
         override fun hideProgress(id: Long) {}
         override fun progress(
             id: Long, fileName: String?, downloaded: Long, size: Long, speed: Float, eta: Long, progress: Int,
-            segments: Collection<SegmentProgress>, files: BatchFileCounts?,
+            segments: Collection<SegmentProgress>, slots: List<SlotProgress>, files: BatchFileCounts?,
         ) {}
 
         override fun torrentProgress(id: Long, progress: DownloadStatusInfo.TorrentProgress) { torrentUpdates.add(progress) }

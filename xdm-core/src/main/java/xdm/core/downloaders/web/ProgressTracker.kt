@@ -13,8 +13,8 @@ import java.util.*
 /**
  * One piece of a download for the progress window. [start], [length] and [downloaded] place it on the segment
  * bar; for streaming and batch downloads they are equal slots, not bytes. The [live] pieces, the ones being
- * downloaded right now, are also listed in the window's table, in bar order, with [status] and their own
- * downloaded [bytes].
+ * downloaded right now, hold the connection slots of the window's table ([ConnectionSlots]), with [status]
+ * and their own downloaded [bytes].
  */
 data class SegmentProgress(
     var start: Long = 0,
@@ -49,13 +49,54 @@ class ProgressTracker(val singleFile: Boolean) {
     private val offsetComparator = compareBy<SegmentProgress> { it.start }
     private val segments = ArrayList<SegmentProgress>()
     private val sortedSegments = sortedSetOf(offsetComparator)
+    private val slots = ConnectionSlots()
 
     /**
      * A snapshot for the progress window, which paints it on the EDT while the download threads keep
      * updating the live segments under this tracker's lock.
      */
     val segmentData: Collection<SegmentProgress>
-        @Synchronized get() = (if (singleFile) sortedSegments else segments).map { it.copy() }
+        @Synchronized get() = currentSegments().map { it.copy() }
+
+    /**
+     * The connection slots for the window's table, kept for the whole session: closing and reopening
+     * the window shows the same rows, each with the bytes of every piece that used it.
+     */
+    val slotData: List<SlotProgress>
+        @Synchronized get() = slots.snapshot()
+
+    private fun currentSegments(): Collection<SegmentProgress> = if (singleFile) sortedSegments else segments
+
+    /** For a task that builds its own [segments] (batch): follows them into the slots and returns those. */
+    @Synchronized
+    fun slotsFor(segments: Collection<SegmentProgress>): List<SlotProgress> {
+        slots.update(segments)
+        return slots.snapshot()
+    }
+
+    /**
+     * The download is done (about to assemble, or complete): takes the pieces' final state, which the
+     * once-a-second updates may not have caught, and shows every slot finished.
+     */
+    @Synchronized
+    fun finish(chunks: Map<Long, Chunk>) {
+        updateChunkProgressDataSingleFile(chunks)
+        slots.finish(sortedSegments)
+    }
+
+    /** Streaming: as [finish]. */
+    @Synchronized
+    fun finish(chunks: List<StreamingChunk>) {
+        updateChunkProgressData(chunks)
+        slots.finish(segments)
+    }
+
+    /** Batch: as [finish], with the segments it built. */
+    @Synchronized
+    fun finishSlots(segments: Collection<SegmentProgress>): List<SlotProgress> {
+        slots.finish(segments)
+        return slots.snapshot()
+    }
 
     /**
      * [prg] (percent) and [remainingBytes] are only asked for on the ticks that recompute speed and
@@ -207,6 +248,7 @@ class ProgressTracker(val singleFile: Boolean) {
             seg.live = status == ChunkStatus.Downloading || status == ChunkStatus.Ready
             seg.bytes = seg.downloaded
         }
+        slots.update(sortedSegments)
     }
 
     /**
@@ -238,6 +280,7 @@ class ProgressTracker(val singleFile: Boolean) {
             s.live = status == ChunkStatus.Downloading
             s.bytes = chunk.downloaded.get()
         }
+        slots.update(segments)
     }
 
     private companion object {

@@ -18,6 +18,7 @@ import xdm.core.downloaders.DownloadType
 import xdm.core.downloaders.ExtractorSource
 import xdm.core.downloaders.TaskInfoDB
 import xdm.core.downloaders.web.SegmentProgress
+import xdm.core.downloaders.web.SlotProgress
 import xdm.core.media.muxer.Muxer
 import xdm.core.network.http.CertTrust
 import xdm.core.network.http.HttpAuth
@@ -55,14 +56,22 @@ object DesktopUiSink : UiSink {
 
     override fun downloadsRemoved() = app.downloadsRemovedInView()
 
-    override fun showProgress(id: Long, fileName: String) = app.showProgressWindow(id, fileName)
+    /** A download session starts: the last one's bar and table are not shown again. */
+    override fun showProgress(id: Long, fileName: String) {
+        app.forgetProgress(id)
+        app.showProgressWindow(id, fileName)
+    }
 
-    override fun hideProgress(id: Long) = app.hideProgressWindow(id)
+    /** The session ended (finished, paused or stopped); the user's Hide goes to the app directly and keeps them. */
+    override fun hideProgress(id: Long) {
+        app.forgetProgress(id)
+        app.hideProgressWindow(id)
+    }
 
     override fun progress(
         id: Long, fileName: String?, downloaded: Long, size: Long, speed: Float, eta: Long, progress: Int,
-        segments: Collection<SegmentProgress>, files: BatchFileCounts?,
-    ) = app.updateProgressWindow(id, fileName, downloaded, size, speed, eta, progress, segments, files)
+        segments: Collection<SegmentProgress>, slots: List<SlotProgress>, files: BatchFileCounts?,
+    ) = app.updateProgressWindow(id, fileName, downloaded, size, speed, eta, progress, segments, slots, files)
 
     override fun moveProgress(id: Long, phase: MovePhase, progress: Int) = app.updateMoveProgress(id, phase, progress)
 
