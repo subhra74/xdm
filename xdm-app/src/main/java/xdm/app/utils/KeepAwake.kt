@@ -1,6 +1,7 @@
 package xdm.app.utils
 
 import xdm.app.OS
+import xdm.app.utils.linux.PortalInhibit
 import xdm.app.utils.win.Win32Power
 import xdm.core.util.Logger
 import java.util.concurrent.CountDownLatch
@@ -17,12 +18,15 @@ import java.util.concurrent.TimeUnit
  *             process and looked like script execution to antivirus heuristics.)
  *  - macOS:   `caffeinate -i -w <pid>` - `-i` inhibits idle sleep, `-w <pid>` makes caffeinate
  *             auto-exit when our JVM dies.
- *  - Linux:   `systemd-inhibit --what=idle:sleep --mode=block cat` - a logind inhibitor lock held
+ *  - Linux:   the XDG desktop portal's Inhibit (suspend only), held by the request handle it
+ *             returns - see [PortalInhibit]. It is the only way inside a Flatpak and works the same
+ *             on a deb/rpm install. Without a portal (a bare window manager):
+ *             `systemd-inhibit --what=idle:sleep --mode=block cat` - a logind inhibitor lock held
  *             for the lifetime of the blocking `cat`.
  *
  * Whichever mechanism is used, it is released when XDM exits even if it exits badly: the OS drops
- * a thread's execution state when the process dies, and the helper processes are tied to the JVM's
- * lifetime.
+ * a thread's execution state when the process dies, the portal drops an inhibitor when our bus
+ * connection closes, and the helper processes are tied to the JVM's lifetime.
  *
  * [acquire] and [release] are both idempotent and thread-safe.
  */
@@ -30,6 +34,7 @@ object KeepAwake {
     private val lock = Any()
     private var process: Process? = null
     private var inhibitor: WindowsInhibitor? = null
+    private var portalHandle: String? = null
     private val os = detectOS()
 
     /** Ensure the sleep inhibitor is active. Safe to call repeatedly. */
@@ -46,7 +51,14 @@ object KeepAwake {
                 if (inhibitor != null) Logger.info("KeepAwake: sleep inhibitor acquired ($os)")
                 return
             }
-            if (process?.isAlive == true) return
+            if (portalHandle != null || process?.isAlive == true) return
+            if (os == OS.Linux) {
+                portalHandle = PortalInhibit.inhibit("Download in progress")
+                if (portalHandle != null) {
+                    Logger.info("KeepAwake: sleep inhibitor acquired (portal)")
+                    return
+                }
+            }
             process = try {
                 startInhibitor()
             } catch (e: Exception) {
@@ -65,6 +77,11 @@ object KeepAwake {
                 Logger.info("KeepAwake: sleep inhibitor released")
             }
             inhibitor = null
+            portalHandle?.let {
+                PortalInhibit.release(it)
+                Logger.info("KeepAwake: sleep inhibitor released (portal)")
+            }
+            portalHandle = null
             process?.let {
                 runCatching { it.destroy() }
                 Logger.info("KeepAwake: sleep inhibitor released")

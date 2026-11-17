@@ -3,6 +3,7 @@ package xdm.app.ui.screens
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import xdm.app.AppContext
 import xdm.app.I8N.text
+import xdm.app.ui.components.LinkRow
 import xdm.app.ui.components.MessageBox
 import xdm.app.ui.screens.settings.settingsIconButton
 import xdm.app.utils.RemixIcon
@@ -198,6 +199,19 @@ class RefreshLinkWindow(
             lblWaiting.isVisible = true
         }
         panel.add(btnOpen)
+
+        // The button opens the default browser, which may not be the one with the extension (and inside
+        // a Flatpak it is the only browser XDM can start). The page address can be opened by hand in the
+        // right one instead.
+        refererPage?.let { page ->
+            panel.add(Box.createRigidArea(scaledSize(0, 14)))
+            panel.add(wrappedLabel(text("REF_COPY_PAGE_HINT")))
+            panel.add(Box.createRigidArea(scaledSize(0, 6)))
+            panel.add(LinkRow(fitText = false) { lblWaiting.isVisible = true }.apply {
+                url = page
+                maximumSize = Dimension(Int.MAX_VALUE, preferredSize.height)
+            })
+        }
 
         panel.add(Box.createRigidArea(scaledSize(0, 12)))
         panel.add(lblWaiting)

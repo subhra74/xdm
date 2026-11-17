@@ -231,7 +231,11 @@ class BrowserExtensionPanel : JPanel() {
  * Read-only [url] field with a copy button beside it. With [fitText] false the field asks for no width
  * of its own (it still stretches to fill the row), so a long URL does not widen the window it sits in.
  */
-private class LinkRow(fitText: Boolean = true) : JPanel(BorderLayout(6.px, 0)) {
+/**
+ * A read-only link with a copy button. Also used by the Refresh link window, for opening the page by hand in
+ * the browser that has the extension. [onCopy] runs on the EDT after each copy.
+ */
+internal class LinkRow(fitText: Boolean = true, private val onCopy: () -> Unit = {}) : JPanel(BorderLayout(6.px, 0)) {
     private val urlField = JTextField().apply {
         isEditable = false
         if (!fitText) columns = 1
@@ -260,6 +264,7 @@ private class LinkRow(fitText: Boolean = true) : JPanel(BorderLayout(6.px, 0)) {
             copy.icon = copiedIcon
             copy.toolTipText = I8N.text("BROWSER_EXT_COPIED")
             revert.restart()
+            onCopy()
         }
         revert = Timer(1500) {
             copy.icon = copyIcon

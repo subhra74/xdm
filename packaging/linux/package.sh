@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Runs inside the Linux build image (packaging/build-linux.sh): the app image, then the deb, rpm,
-# Arch package and tar.gz made from it. Output: build/linux-<arch>/.
+# Arch package, tar.gz and .flatpak made from it. Output: build/linux-<arch>/.
 #
 set -euo pipefail
 cd "$(dirname "$0")/../.."
@@ -44,6 +44,9 @@ done
 # The tar.gz is the plain image (no .package: per-user .cfg overrides need dpkg/rpm, PACKAGING.md 7.3).
 tar -C "$OUT/image" -czf "$OUT/xdm-app-$VERSION-linux-$ARCH.tar.gz" \
   --transform "s,^xdm-app,xdm-app-$VERSION," xdm-app
+
+# The Flatpak bundle from the same image (private-docs/docs/flatpak.md).
+packaging/flatpak/build-flatpak.sh "$IMAGE" "$OUT/xdm-app-$VERSION-linux-$ARCH.flatpak" "$VERSION"
 
 echo
 echo "Output (build/linux-$ARCH):"

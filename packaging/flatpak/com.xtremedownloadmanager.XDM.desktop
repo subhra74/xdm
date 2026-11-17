@@ -1,0 +1,16 @@
+[Desktop Entry]
+Type=Application
+Name=Xtreme Download Manager - XDM
+GenericName=Download Manager
+Comment=Download accelerator and video downloader
+# Flatpak rewrites Exec on install to `flatpak run --command=xdm-app com.xtremedownloadmanager.XDM %U`.
+Exec=xdm-app %U
+Icon=com.xtremedownloadmanager.XDM
+Terminal=false
+Categories=Network;FileTransfer;
+Keywords=download;accelerator;video;hls;dash;
+MimeType=x-scheme-handler/xdm-app;x-scheme-handler/magnet;application/x-bittorrent;
+# Same reason as packaging/linux/xdm-app.desktop (PACKAGING.md 7.2).
+StartupNotify=false
+# X11 window class; under native Wayland the app id is the Flatpak ID (WaylandToolkit), matching this file's name.
+StartupWMClass=xdm-app-AppMain

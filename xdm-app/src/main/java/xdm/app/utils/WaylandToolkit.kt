@@ -32,10 +32,10 @@ object WaylandToolkit {
      * The Wayland app id of XDM's windows, which compositors match to `<id>.desktop`. Without it
      * WLToolkit uses the java command line (`xdm.app.AppMain ...`), so GNOME can't tie the window to
      * the menu entry it launched: the busy cursor runs until its timeout and the dock shows no XDM.
-     * The packages install `xdm-app.desktop` (PACKAGING.md 7.2).
+     * The packages install `xdm-app.desktop` (PACKAGING.md 7.2); a Flatpak exports `<flatpak id>.desktop`.
      */
     private const val APP_ID_PROPERTY = "awt.app.id"
-    private const val APP_ID = "xdm-app"
+    private val APP_ID: String get() = AppLauncher.flatpakId ?: AppLauncher.LAUNCHER_NAME
     private const val ENV_OVERRIDE = "XDM_WAYLAND"
 
     /** True on a Linux Wayland session whose runtime has the Wayland toolkit, i.e. the setting can matter. */

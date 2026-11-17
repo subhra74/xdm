@@ -168,12 +168,17 @@ $args
     private fun linuxDesktopFile() =
         File(System.getProperty("user.home"), ".config/autostart/xdm-app.desktop")
 
-    private fun linuxDesktopContent(cmd: List<String>): String {
+    /**
+     * The XDG autostart entry. Inside a Flatpak the same file is written (home access reaches the
+     * host's `~/.config/autostart`); only `Exec=` ([AppLauncher.command]) and the icon, which a
+     * Flatpak exports under its app ID, differ.
+     */
+    internal fun linuxDesktopContent(cmd: List<String>, flatpakId: String? = AppLauncher.flatpakId): String {
         return """[Desktop Entry]
 Type=Application
 Name=$APP_NAME
 Exec=${AppLauncher.desktopExec(cmd)}
-Icon=xdm-app
+Icon=${flatpakId ?: AppLauncher.LAUNCHER_NAME}
 Terminal=false
 X-GNOME-Autostart-enabled=true
 """

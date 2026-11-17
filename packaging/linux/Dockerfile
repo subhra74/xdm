@@ -41,6 +41,15 @@ RUN set -eux; \
     tar -xzf "$nfpm" -C /usr/local/bin nfpm; rm "$nfpm"; \
     /opt/jbr/bin/java -version; nfpm --version
 
+# The .flatpak bundle (packaging/flatpak/build-flatpak.sh): flatpak itself and the Platform runtime the
+# bundle names, per user from Flathub. Keep FLATPAK_RUNTIME_BRANCH in step with build-flatpak.sh.
+ARG FLATPAK_RUNTIME_BRANCH=25.08
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends flatpak \
+ && rm -rf /var/lib/apt/lists/* \
+ && flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo \
+ && flatpak install --user -y --noninteractive flathub "org.freedesktop.Platform//${FLATPAK_RUNTIME_BRANCH}"
+
 ENV JAVA_HOME=/opt/jbr
 ENV PATH=/opt/jbr/bin:$PATH
 WORKDIR /src

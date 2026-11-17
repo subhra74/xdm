@@ -21,6 +21,13 @@ object LinuxUtils {
             "--dest=org.freedesktop.login1", "/org/freedesktop/login1",
             "org.freedesktop.login1.Manager.PowerOff", "boolean:true"
         ),
+        // The same call with GLib's tool: the Flatpak runtime has no systemctl, and may lack
+        // dbus-send (needs --system-talk-name=org.freedesktop.login1 in the manifest).
+        arrayOf(
+            "gdbus", "call", "--system",
+            "--dest", "org.freedesktop.login1", "--object-path", "/org/freedesktop/login1",
+            "--method", "org.freedesktop.login1.Manager.PowerOff", "true"
+        ),
         // Legacy fallback for pre-systemd / ConsoleKit-based systems.
         arrayOf(
             "dbus-send", "--system", "--print-reply",

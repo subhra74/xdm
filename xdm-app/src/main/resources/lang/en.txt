@@ -183,6 +183,7 @@ REF_TITLE=Refresh link
 REF_DESC1=Please open the web page in browser, where the download link was found. In case of streaming video, please play the video and select the same format.
 REF_OPEN_PAGE=Open containing web page
 REF_WAITING_FOR_LINK=Waiting for new link...
+REF_COPY_PAGE_HINT=Or copy the page address and open it in the browser where you found the download (the one with the XDM extension):
 DEL_TITLE=Delete confirmation
 DEL_SEL_TEXT=Are you sure you want to delete selected downloads?
 LBL_CLOSE=Close
