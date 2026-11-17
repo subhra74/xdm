@@ -69,6 +69,13 @@ object AppTheme {
 
     private val otherColor: Color get() = color("XDM.category.other", "Component.accentColor")
 
+    /**
+     * [c] composited over the list background as an opaque color: a translucent status pill fill
+     * looks the same on the selection card as it does on an unselected row.
+     */
+    fun solidOverList(c: Color): Color =
+        if (c.alpha == 255) c else blend(listBackground, Color(c.red, c.green, c.blue), c.alpha / 255f)
+
     private fun blend(c: Color, towards: Color, amount: Float): Color = Color(
         (c.red + (towards.red - c.red) * amount).toInt(),
         (c.green + (towards.green - c.green) * amount).toInt(),

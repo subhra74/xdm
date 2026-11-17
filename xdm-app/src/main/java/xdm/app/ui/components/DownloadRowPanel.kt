@@ -210,6 +210,7 @@ class DownloadRowPanel(val root: JPanel = JPanel()) {
         set(value) {
             field = value
             lblInfo.foreground = if (value) AppTheme.listSelectedInfoForeground else AppTheme.listInfoForeground
+            lblProgress.onSelection = value
             val color = if (value) AppTheme.listSelectedButtonColor else AppTheme.listButtonColor
             for ((btn, glyph) in buttonGlyphs) btn.icon = tileIcon(glyph, color)
         }
@@ -349,6 +350,14 @@ class DownloadRowPanel(val root: JPanel = JPanel()) {
             font = plainFont
         }
 
+        /** Whether the row sits on the selection card: the pill fill is then painted opaque. */
+        var onSelection = false
+            set(value) {
+                if (field == value) return
+                field = value
+                if (pill != null) repaint()
+            }
+
         var pill: StatusPill? = null
             set(value) {
                 if (field == value) return
@@ -369,11 +378,14 @@ class DownloadRowPanel(val root: JPanel = JPanel()) {
                 val h = minOf(height, 24.px)
                 val g2 = g.create() as Graphics2D
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-                g2.color = when (pill) {
+                val fill = when (pill) {
                     StatusPill.FAILED -> AppTheme.failedBackground
                     StatusPill.SEEDING -> AppTheme.seedingBackground
                     StatusPill.PAUSED -> AppTheme.pausedBackground
                 }
+                // On the selection card a translucent fill would mix with the card color, so paint
+                // it as it looks on an unselected row.
+                g2.color = if (onSelection) AppTheme.solidOverList(fill) else fill
                 g2.fillRoundRect(0, (height - h) / 2, width, h, h, h)
                 g2.dispose()
             }
