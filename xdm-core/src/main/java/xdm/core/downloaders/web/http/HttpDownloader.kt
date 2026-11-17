@@ -13,6 +13,7 @@ import xdm.core.network.http.HttpResponse
 import xdm.core.network.http.PoolingHttpClient
 import xdm.core.network.http.impl.HttpClientImpl
 import xdm.core.storage.prepareForWriting
+import xdm.core.util.DownloadClock
 import xdm.core.util.Logger
 import xdm.core.util.CoreUtils
 import java.net.Proxy
@@ -29,6 +30,12 @@ interface ChunkController : DownloaderTask {
 
     /** The link refused chunk [id] after part of the file was downloaded; see [Refusal]. */
     fun onLinkRefused(id: Long): Refusal
+
+    /** When the download last received data, shared by its chunks. */
+    val clock: DownloadClock
+
+    /** Chunk [id] starts waiting until [until] (wall clock), or stops waiting (0). */
+    fun onChunkWait(id: Long, until: Long)
     fun onChunkFinished(id: Long)
     fun takeOverChunk(chunkId: Long, maxByteRange: Long): Boolean
 }
@@ -188,8 +195,13 @@ class HttpDownloaderTask : ChunkController {
     /** The error of the most recent failed chunk, reported if the download ends up failing. */
     private val lastChunkError = AtomicReference<DownloadError?>(null)
 
-    /** When the last bytes of this session came in; 0 before any. */
-    private val lastDataAt = AtomicLong(0)
+    override val clock = DownloadClock()
+
+    /** Chunks waiting to ask again, with the wall-clock time their wait ends. */
+    private val waits = ConcurrentHashMap<Long, Long>()
+
+    /** The error each failed chunk gave up with, until it is restarted or finished. */
+    private val chunkErrors = ConcurrentHashMap<Long, DownloadError>()
 
     /** Set once the failure has been reported, so chunks failing together report it once. */
     private val failureReported = AtomicBoolean(false)
@@ -210,6 +222,7 @@ class HttpDownloaderTask : ChunkController {
             return
         }
         startRequested.set(true)
+        clock.startRun()
         Thread {
             context.downloadHost.onDownloadActivated(context.id)
             // The part file is written straight into the target folder: make sure that works before
@@ -241,6 +254,7 @@ class HttpDownloaderTask : ChunkController {
             return
         }
         startRequested.set(true)
+        clock.startRun()
         Thread {
             context.downloadHost.onDownloadActivated(context.id)
             progressTracker.totalDownloadedBytes = context.downloaded.get()
@@ -308,6 +322,7 @@ class HttpDownloaderTask : ChunkController {
     override fun onChunkFinished(id: Long) {
         // Whoever finished it, a racer still fetching it is no longer needed.
         racers[id]?.cancel()
+        chunkErrors.remove(id)
         if (!context.completed.get()) {
             context.write {
                 if (context.chunks.values.any { it.status.get() != ChunkStatus.Finished }) {
@@ -375,6 +390,7 @@ class HttpDownloaderTask : ChunkController {
     }
 
     override fun onChunkFailed(id: Long, error: DownloadError) {
+        chunkErrors[id] = error
         lastChunkError.set(error)
         if (error == DownloadError.DiskSpaceError) {
             // A disk error is not retried: the whole download fails with it, and the other chunks stop.
@@ -387,39 +403,41 @@ class HttpDownloaderTask : ChunkController {
     }
 
     /**
-     * A refusal while other chunks are still running and data came in a moment ago (or one of them is reading
-     * right now) is the server turning away one connection too many (some CDNs answer that with 403, not 429),
-     * not an expired link: the chunk backs off and asks again, as after a 429. With nothing else running, a
-     * refusal right after data came in is asked again shortly too; otherwise the link expired.
+     * A refusal while the download is still receiving data (another chunk is reading right now, or bytes came in
+     * within the stall window, counted from the start of this run) is the server turning away one connection too
+     * many (some CDNs answer that with 403, not 429), not an expired link: the chunk waits and asks again. Once
+     * nothing has come in for the stall window, the link expired.
      */
     override fun onLinkRefused(id: Long): Refusal {
-        context.read {
-            val others = context.chunks.values.count {
-                it.id != id && it.status.get().let { s -> s != ChunkStatus.Finished && s != ChunkStatus.Failed }
-            }
-            val reading = context.chunks.values.any { it.id != id && it.response.get() != null }
-            val recent = lastDataAt.get().let { it > 0 && System.currentTimeMillis() - it < LINK_ALIVE_MS }
-            if (others > 0 && (reading || recent)) {
-                Logger.info("XDM", "Chunk $id refused while other connections download: server limit, backing off")
-                return Refusal.Busy
-            }
-            if (others == 0 && recent) {
-                Logger.info("XDM", "Chunk $id refused right after data came in, asking again")
-                return Refusal.Retry
-            }
+        var reading = false
+        context.read { reading = context.chunks.values.any { it.id != id && it.response.get() != null } }
+        if (reading || !clock.stalled()) {
+            Logger.info("XDM", "Chunk $id refused while the download is receiving data: server limit, waiting")
+            return Refusal.Wait
         }
         return Refusal.Expired
     }
 
+    override fun onChunkWait(id: Long, until: Long) {
+        if (until > 0) waits[id] = until else waits.remove(id)
+        val at = if (clock.stalled()) waits.values.minOrNull() ?: 0L else 0L
+        if (at != prgInfo.retryAt && (at != 0L || until > 0)) {
+            prgInfo.retryAt = at
+            context.downloadHost.onDownloadProgress(prgInfo)
+        }
+    }
+
     private fun reportFailure(error: DownloadError) {
         if (!failureReported.compareAndSet(false, true)) return
-        Logger.error("XDM", "No chunk left downloading, stopping download - error: $error")
-        val finalError =
-            if (error == DownloadError.InvalidResponse && context.downloaded.get() > 0 && context.chunks.size > 2) {
-                DownloadError.SessionExpired
-            } else {
-                error
-            }
+        // All failed chunks gave up the same way: that is the reason; otherwise the one that failed last.
+        var errors: List<DownloadError> = emptyList()
+        context.read {
+            errors = context.chunks.values.filter { it.status.get() == ChunkStatus.Failed }.mapNotNull { chunkErrors[it.id] }.distinct()
+        }
+        var finalError = errors.singleOrNull() ?: error
+        // A refusal is only an expiry if the link worked before; otherwise it never did.
+        if (finalError == DownloadError.LinkExpired && context.downloaded.get() == 0L) finalError = DownloadError.InvalidResponse
+        Logger.error("XDM", "No chunk left downloading, stopping download - error: $finalError")
         // Saved before it is reported, like a pause: a resume started right away must load this state.
         context.write {
             syncAll()
@@ -477,6 +495,7 @@ class HttpDownloaderTask : ChunkController {
             context.chunks[chunk]?.let {
                 // Ready until its connection is up, when the retriever makes it Downloading.
                 it.status.set(ChunkStatus.Ready)
+                chunkErrors.remove(chunk)
                 startChunk(chunk)
                 count += 1
             }
@@ -825,7 +844,14 @@ class HttpDownloaderTask : ChunkController {
             }
         }
         context.downloaded.addAndGet(downloaded)
-        if (downloaded > 0) lastDataAt.set(System.currentTimeMillis())
+        if (downloaded > 0) {
+            clock.onData()
+            // Data came in: the download is not waiting on the server any more.
+            if (prgInfo.retryAt != 0L) {
+                prgInfo.retryAt = 0
+                update = true
+            }
+        }
         if (update) {
             context.downloadHost.onDownloadProgress(prgInfo)
         }
@@ -998,9 +1024,6 @@ class HttpDownloaderTask : ChunkController {
 
         /** How often a running download looks for a free slot to split into. */
         const val SPLIT_CHECK_MS = 1000L
-
-        /** How recent the last data must be for a refusal to count as a connection limit, not an expiry. */
-        const val LINK_ALIVE_MS = 3000L
 
         /** A chunk with no more than this left is not split. */
         const val MIN_SPLIT_BYTES = 256L * 1024

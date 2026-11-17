@@ -545,6 +545,7 @@ object HeadlessCli {
         DownloadError.DecryptionError -> "an encrypted segment could not be decrypted"
         DownloadError.OutputWriteError -> "the file could not be saved in the target folder"
         DownloadError.Cancelled -> "cancelled"
+        DownloadError.ServerBusy -> "the server stayed busy (rate limited); try again later"
     }
 
     /** Engine settings from the command line; nothing comes from the GUI's config. */

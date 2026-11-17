@@ -36,7 +36,7 @@ data class ReqCtx(
 data class ConnPlan(
     /** If >= 400, respond with this status and no body (e.g. 500, 503, 429). */
     val failStatus: Int = 0,
-    /** Value for the Retry-After header when [failStatus] == 429. */
+    /** Value for the Retry-After header sent with [failStatus] (any status), when > 0. */
     val retryAfterSecs: Int = 0,
     /** Ignore the Range header and serve the full body with 200 (simulates a non-resumable server). */
     val ignoreRange: Boolean = false,
@@ -54,9 +54,26 @@ data class ConnPlan(
     val stallMs: Long = -1,
     /** After sending this many bytes, abruptly close the connection (premature end -> client IOException). */
     val truncateAfterBytes: Long = -1,
+    /**
+     * Checked before every slice: once true, the server stops sending and holds the connection open with nothing
+     * more (until the server stops), so the client's read times out mid-body.
+     */
+    val stallWhen: (() -> Boolean)? = null,
     /** Serve this version of the file instead of the endpoint's, e.g. one that changed on the server. */
     val version: Version? = null,
 )
+
+/**
+ * A connection limit shared by several endpoints, as a server limits a client across all its URLs (HLS/DASH
+ * segments are one URL each). Requests beyond [max] at once get [status] (with Retry-After when
+ * [retryAfterSecs] > 0) and no body.
+ */
+class SharedLimit(val max: Int, val status: Int, val retryAfterSecs: Int = 0) {
+    val active = AtomicInteger(0)
+    val peakActive = AtomicInteger(0)
+    val refused = AtomicInteger(0)
+    val served = AtomicInteger(0)
+}
 
 /** A version of a served file: its bytes (the same size as the endpoint's), its ETag and its Last-Modified. */
 class Version(val data: ByteArray, val etag: String?, val lastModified: String? = null)
@@ -70,6 +87,10 @@ class Endpoint(
     /** If > 0, at most this many requests are served at once; the rest get [limitStatus] and no body. */
     val maxConcurrent: Int = 0,
     val limitStatus: Int = 503,
+    /** Sent as Retry-After with [limitStatus] when > 0. */
+    val limitRetryAfterSecs: Int = 0,
+    /** A limit counted across every endpoint that shares it; checked before [maxConcurrent]. */
+    val sharedLimit: SharedLimit? = null,
     /**
      * Sent as ETag and Last-Modified. A range request whose If-Range matches neither gets the whole
      * file with 200.
@@ -160,11 +181,39 @@ class MockHttpServer {
         )
         ep.requests.add(ctx)
 
+        val shared = ep.sharedLimit
+        if (shared != null) {
+            val inUse = shared.active.incrementAndGet()
+            if (inUse > shared.max) {
+                shared.active.decrementAndGet()
+                shared.refused.incrementAndGet()
+                try {
+                    if (shared.retryAfterSecs > 0) ex.responseHeaders.add("Retry-After", shared.retryAfterSecs.toString())
+                    ex.sendResponseHeaders(shared.status, -1)
+                } catch (e: IOException) {
+                    // client went away
+                } finally {
+                    ex.close()
+                }
+                return
+            }
+            shared.peakActive.updateAndGet { maxOf(it, inUse) }
+            shared.served.incrementAndGet()
+        }
+        try {
+            serveCounted(ep, ex, ctx)
+        } finally {
+            shared?.active?.decrementAndGet()
+        }
+    }
+
+    private fun serveCounted(ep: Endpoint, ex: HttpExchange, ctx: ReqCtx) {
         val now = ep.active.incrementAndGet()
         if (ep.maxConcurrent > 0 && now > ep.maxConcurrent) {
             ep.active.decrementAndGet()
             ep.refusedByLimit.incrementAndGet()
             try {
+                if (ep.limitRetryAfterSecs > 0) ex.responseHeaders.add("Retry-After", ep.limitRetryAfterSecs.toString())
                 ex.sendResponseHeaders(ep.limitStatus, -1)
             } catch (e: IOException) {
                 // client went away
@@ -195,7 +244,7 @@ class MockHttpServer {
             if (plan.delayBeforeMs > 0) sleepChecking(ep, plan.delayBeforeMs)
 
             if (plan.failStatus >= 400 || plan.failStatus == 204) {
-                if (plan.failStatus == 429 && plan.retryAfterSecs > 0) {
+                if (plan.retryAfterSecs > 0) {
                     ex.responseHeaders.add("Retry-After", plan.retryAfterSecs.toString())
                 }
                 ex.sendResponseHeaders(plan.failStatus, -1)
@@ -235,6 +284,10 @@ class MockHttpServer {
             var stalled = false
             while (pos <= rEnd) {
                 if (ep.closing) break
+                if (plan.stallWhen?.invoke() == true) {
+                    sleepChecking(ep, Long.MAX_VALUE)
+                    break
+                }
                 var allow = rEnd - pos + 1
                 if (plan.stallAfterBytes in 0..Long.MAX_VALUE && !stalled) {
                     allow = minOf(allow, plan.stallAfterBytes - sent)

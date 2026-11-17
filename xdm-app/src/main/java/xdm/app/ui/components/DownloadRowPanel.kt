@@ -2,6 +2,7 @@ package xdm.app.ui.components
 
 import xdm.app.I8N.text
 import xdm.app.ui.screens.moveText
+import xdm.app.ui.screens.retryAtText
 import xdm.app.utils.RemixIcon
 import xdm.app.utils.categoryById
 import xdm.app.utils.ScaledEmptyBorder
@@ -228,6 +229,10 @@ class DownloadRowPanel(val root: JPanel = JPanel()) {
         }
         if (ent.size > 0) {
             text.append(" / ").append(formatSize(ent.size.toDouble()))
+        }
+        if (ent.status == RecordStatus.DOWNLOADING && ent.retryAt > System.currentTimeMillis()) {
+            text.append(gap).append(retryAtText(ent.retryAt))
+            return text.toString()
         }
         if (ent.speed > 0 && ent.status == RecordStatus.DOWNLOADING) {
             text.append(" (").append(formatSize(ent.speed.toDouble())).append("/s)")

@@ -48,10 +48,12 @@ class TestBatchMerge {
         configDir = File(root, "config").apply { mkdirs() }
         tempDir = File(root, "tmp").apply { mkdirs() }
         server = MockHttpServer()
+        FastRetries.install()
     }
 
     @AfterEach
     fun tearDown() {
+        FastRetries.reset()
         server.stop()
         root.deleteRecursively()
     }

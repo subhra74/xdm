@@ -284,11 +284,12 @@ class HlsDownloaderTask : StreamingDownloaderTask {
             executorService.submit {
                 try {
                     if (!error.get() && !context.stopFlag.get()) {
-                        Logger.info("Header names: ${hlsContext.headers?.keys}")
-                        val bytes = downloadManifestBytes(
-                            context.httpClient, keyUrl, hlsContext.headers, hlsContext.cookie, context.stopFlag,
-                            recordFetchError, maxBytes = MAX_KEY_BYTES
-                        )
+                        val bytes = fetchWithRetry("Key") { onErrorResponse, onError ->
+                            downloadManifestBytes(
+                                context.httpClient, keyUrl, hlsContext.headers, hlsContext.cookie, context.stopFlag,
+                                onError, maxBytes = MAX_KEY_BYTES, onErrorResponse = onErrorResponse,
+                            )
+                        }
                         when {
                             bytes == null -> throw IOException("Unable to download key: $keyUrl")
                             bytes.size != 16 -> throw IOException("Invalid key size ${bytes.size}: $keyUrl")

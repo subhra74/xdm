@@ -11,9 +11,12 @@ import xdm.core.network.http.HttpResponse
 import xdm.core.network.http.PoolingHttpClient
 import xdm.core.network.http.Range
 import xdm.core.network.http.isTlsVerificationError
+import xdm.core.util.DownloadClock
 import xdm.core.util.Logger
-import xdm.core.util.getRetryDelay
-import xdm.core.util.isLinkExpiredStatus
+import xdm.core.util.PartRetry
+import xdm.core.util.RetryDecision
+import xdm.core.util.RetryPolicy
+import xdm.core.util.Trouble
 import xdm.core.storage.StorageFile
 import java.io.IOException
 import java.util.concurrent.atomic.AtomicBoolean
@@ -51,9 +54,11 @@ class BatchFileRetriever(
     private val headers: HeaderMap?,
     private val cookie: String?,
     private val stopFlag: AtomicBoolean,
-    /** Attempts in a row that receive no data (stalls, timeouts, 429s) before the file fails. */
+    /** Network errors in a row while the batch is stalled before the file fails. */
     private val maxRetries: Int,
     private val listener: BatchFileListener,
+    /** When the batch last received data, shared by all its items; see [RetryPolicy]. */
+    private val clock: DownloadClock = DownloadClock(),
 ) : Runnable {
 
     override fun run() {
@@ -82,28 +87,19 @@ class BatchFileRetriever(
     }
 
     private fun download() {
-        var attemptsWithoutData = 0
+        val retry = PartRetry(clock, maxRetries)
         while (!stopFlag.get()) {
             // Only bytes that are both recorded and on disk count: the state is saved every few
             // seconds, the file is written continuously, and either can be ahead after a crash.
             val onDisk = partFile.length().coerceAtLeast(0L)
             if (file.downloaded.get() != onDisk) file.downloaded.set(minOf(file.downloaded.get(), onDisk))
             val downloadedBefore = file.downloaded.get()
-            var retryAfter = 3L
-            try {
+            val decision: RetryDecision = try {
                 val range = if (downloadedBefore > 0) Range(downloadedBefore, null) else null
-                httpClient.getResponse(url, headers, cookie, range).getOrThrow().use { response ->
+                // Null once the body is in; a decision when the answer was an error.
+                val failed: RetryDecision? = httpClient.getResponse(url, headers, cookie, range).getOrThrow().use { response ->
                     if (stopFlag.get()) return
                     val code = response.statusCode
-                    if (isLinkExpiredStatus(code, response.getHeader("WWW-Authenticate"))) {
-                        Logger.error("XDM", "Batch item ${file.index} refused: $code")
-                        fail(if (downloadedBefore > 0) DownloadError.LinkExpired else DownloadError.InvalidResponse)
-                        return
-                    }
-                    if (code == 429) {
-                        retryAfter = getRetryDelay(response.getHeader("retry-after"), 5)
-                        throw IOException("Rate limit hit")
-                    }
                     // No content (often an analytics beacon the page scan picked up): nothing to save.
                     if ((code == 204 || code == 205) && downloadedBefore == 0L) {
                         Logger.info("XDM", "Batch item ${file.index} skipped: $code, no content")
@@ -112,9 +108,16 @@ class BatchFileRetriever(
                         return
                     }
                     if (code != 200 && code != 206) {
-                        Logger.error("XDM", "Batch item ${file.index} failed - invalid response: $code")
-                        fail(DownloadError.InvalidResponse)
-                        return
+                        val retryAfter = RetryPolicy.retryAfterMs(response.getHeader("Retry-After"))
+                        val trouble = RetryPolicy.classify(code, response.getHeader("WWW-Authenticate"), retryAfter != null)
+                        if (trouble == null) {
+                            Logger.error("XDM", "Batch item ${file.index} failed - $code")
+                            fail(DownloadError.InvalidResponse)
+                            return
+                        }
+                        return@use retry.next(trouble, retryAfter).also {
+                            if (it is RetryDecision.Wait) Logger.info("XDM", "Batch item ${file.index}: $code, again in ${it.ms} ms")
+                        }
                     }
                     // A 200 to a Range request is the whole file again: start it over.
                     val offset = if (code == 206 && range != null) downloadedBefore else 0L
@@ -122,12 +125,17 @@ class BatchFileRetriever(
                     file.length.set(response.contentLength?.let { offset + it } ?: -1L)
                     listener.onConnected(file, response)
                     if (!copy(response, offset)) return
+                    null
                 }
-                if (file.status.get() == ChunkStatus.Downloading) {
-                    val error = listener.onComplete(file)
-                    if (error != null) fail(error) else file.status.set(ChunkStatus.Finished)
+                if (failed != null) {
+                    failed
+                } else {
+                    if (file.status.get() == ChunkStatus.Downloading) {
+                        val error = listener.onComplete(file)
+                        if (error != null) fail(error) else file.status.set(ChunkStatus.Finished)
+                    }
+                    return
                 }
-                return
             } catch (ex: IOException) {
                 if (stopFlag.get()) return
                 Logger.error("XDM", "Error downloading batch item ${file.index}: ${ex.message}")
@@ -135,13 +143,17 @@ class BatchFileRetriever(
                     fail(DownloadError.TlsError)
                     return
                 }
-                if (file.downloaded.get() > downloadedBefore) {
-                    attemptsWithoutData = 0
-                } else if (++attemptsWithoutData > maxRetries) {
-                    fail(DownloadError.NetworkError)
+                if (file.downloaded.get() > downloadedBefore) retry.onData()
+                retry.next(Trouble.Network)
+            }
+            when (decision) {
+                is RetryDecision.GiveUp -> {
+                    Logger.error("XDM", "Batch item ${file.index} failed: ${decision.error}")
+                    // A refusal is only an expiry if this file had started; otherwise the link never worked.
+                    fail(if (decision.error == DownloadError.LinkExpired && file.downloaded.get() == 0L) DownloadError.InvalidResponse else decision.error)
                     return
                 }
-                Thread.sleep(retryAfter * 1000)
+                is RetryDecision.Wait -> if (!RetryPolicy.sleep(decision.ms) { stopFlag.get() }) return
             }
         }
     }
@@ -181,6 +193,7 @@ class BatchFileRetriever(
                         return false
                     }
                     file.downloaded.addAndGet(n.toLong())
+                    clock.onData()
                     listener.onBytes(file, n.toLong())
                 }
             }

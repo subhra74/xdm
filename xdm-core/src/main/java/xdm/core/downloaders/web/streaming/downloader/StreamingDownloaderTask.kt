@@ -18,7 +18,14 @@ import xdm.core.storage.StorageFile
 import xdm.core.storage.prepareForWriting
 import xdm.core.util.FileUtils
 import xdm.core.util.Logger
+import xdm.core.util.DownloadClock
+import xdm.core.util.ManifestUtils
 import xdm.core.util.ManifestUtils.downloadManifestAsFile
+import xdm.core.util.PartRetry
+import xdm.core.util.RetryDecision
+import xdm.core.util.RetryPolicy
+import xdm.core.util.Trouble
+import xdm.core.network.http.HttpResponse
 import xdm.core.util.getFileExtFromUrl
 import xdm.core.util.isOutOfSpace
 import java.io.File
@@ -28,6 +35,7 @@ import xdm.core.media.muxer.OutputKind
 import xdm.core.media.muxer.SegmentInfo
 import xdm.core.media.muxer.impl.SegmentProbe
 import java.io.IOException
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -71,7 +79,67 @@ abstract class StreamingDownloaderTask(
     /** Pass to manifest/key downloads so a TLS verification failure is remembered. */
     protected val recordFetchError: (Throwable) -> Unit = { if (isTlsVerificationError(it)) tlsFailure.set(true) }
 
-    private fun setupError(fallback: DownloadError) = if (tlsFailure.get()) DownloadError.TlsError else fallback
+    /** Set when a manifest or key fetch gave up on a busy server, so the setup failure says so. */
+    private val busyFailure = AtomicBoolean(false)
+
+    private fun setupError(fallback: DownloadError) = when {
+        tlsFailure.get() -> DownloadError.TlsError
+        busyFailure.get() -> DownloadError.ServerBusy
+        else -> fallback
+    }
+
+    /** When the download last received data: segments keep asking while it does (see [RetryPolicy]). */
+    protected val clock = DownloadClock()
+
+    /** Segments waiting to ask again, by id, with the wall-clock time their wait ends. */
+    private val waits = ConcurrentHashMap<Long, Long>()
+
+    /** The error of the segment that failed last; reported when the failed segments disagree. */
+    @Volatile
+    private var lastFailure: DownloadError? = null
+
+    /**
+     * Fetches a playlist or key, a lone request with nothing else running: a busy server and network errors are
+     * asked again by [RetryPolicy]'s rules (the run start counts as data, so a busy server gets the full budget);
+     * a refusal or a missing file fails at once unless it says when to come back (Retry-After).
+     */
+    protected fun <T : Any> fetchWithRetry(
+        what: String,
+        fetch: (onErrorResponse: (HttpResponse) -> Unit, onError: (Throwable) -> Unit) -> T?,
+    ): T? {
+        val retry = PartRetry(clock, config.maxRetries)
+        while (!context.stopFlag.get()) {
+            var code = 0
+            var retryAfter: Long? = null
+            var authenticate: String? = null
+            var failure: Throwable? = null
+            val result = fetch({ r ->
+                code = r.statusCode
+                retryAfter = RetryPolicy.retryAfterMs(r.getHeader("Retry-After"))
+                authenticate = r.getHeader("WWW-Authenticate")
+            }, { failure = it; recordFetchError(it) })
+            if (result != null || context.stopFlag.get()) return result
+            val f = failure
+            val trouble = when {
+                code != 0 -> RetryPolicy.classify(code, authenticate, retryAfter != null)
+                f == null || f is ManifestUtils.ManifestTooLargeException || isTlsVerificationError(f) -> null
+                else -> Trouble.Network
+            }
+            if (trouble != Trouble.Server && trouble != Trouble.Network) return null
+            when (val d = retry.next(trouble, retryAfter)) {
+                is RetryDecision.GiveUp -> {
+                    if (d.error == DownloadError.ServerBusy) busyFailure.set(true)
+                    Logger.error("XDM", "$what: gave up, ${d.error}")
+                    return null
+                }
+                is RetryDecision.Wait -> {
+                    Logger.info("XDM", "$what: ${if (code != 0) code else f?.message}, again in ${d.ms} ms")
+                    if (!RetryPolicy.sleep(d.ms) { context.stopFlag.get() }) return null
+                }
+            }
+        }
+        return null
+    }
 
     abstract fun initDownload(): DownloadStatusInfo.InitInfo?
     abstract fun fileExt(): String
@@ -190,6 +258,7 @@ abstract class StreamingDownloaderTask(
 
     private fun download() {
         try {
+            clock.startRun()
             context.downloadHost.onDownloadActivated(context.id)
             if (!context.init.get()) {
                 val initInfo = initDownload()
@@ -248,9 +317,12 @@ abstract class StreamingDownloaderTask(
             saveContext()
             if (context.stopFlag.get()) return
             // A subtitle is extra: a failed one is left out, it never fails the video.
-            context.chunks.find { it.tag != SUBS_TAG && it.status.get() != ChunkStatus.Finished }?.let {
-                Logger.error("XDM", "Not all chunks downloaded successfully")
-                var error = it.error.get() ?: DownloadError.InternalError
+            val unfinished = context.chunks.filter { it.tag != SUBS_TAG && it.status.get() != ChunkStatus.Finished }
+            if (unfinished.isNotEmpty()) {
+                Logger.error("XDM", "${unfinished.size} segments not downloaded")
+                // All failed the same way: that is the reason; otherwise the one that failed last.
+                val errors = unfinished.mapNotNull { it.error.get() }.distinct()
+                var error = errors.singleOrNull() ?: lastFailure ?: errors.firstOrNull() ?: DownloadError.InternalError
                 // A refusal is only an expiry if the link worked before; otherwise it never did.
                 val anyProgress = context.chunks.any { c -> c.status.get() == ChunkStatus.Finished || c.downloaded.get() > 0 }
                 if (error == DownloadError.LinkExpired && !anyProgress) error = DownloadError.InvalidResponse
@@ -595,9 +667,12 @@ abstract class StreamingDownloaderTask(
     ) {
         executorService.submit {
             try {
-                downloadManifestAsFile(
-                    context.httpClient, url, context.headers, context.cookie, context.stopFlag, recordFetchError
-                )?.let { path ->
+                fetchWithRetry("Playlist") { onErrorResponse, onError ->
+                    downloadManifestAsFile(
+                        context.httpClient, url, context.headers, context.cookie, context.stopFlag, onError,
+                        onErrorResponse = onErrorResponse,
+                    )
+                }?.let { path ->
                     val file = File(path)
                     if (!manifestFile.compareAndSet(null, file)) deleteManifestFile(file)
                 }
@@ -643,8 +718,12 @@ abstract class StreamingDownloaderTask(
                 this.slots = progressTracker.slotData
             }
             context.downloaded.addAndGet(downloaded)
+            // Data came in: the download is not waiting on the server any more.
+            if (prgInfo.retryAt != 0L) {
+                prgInfo.retryAt = 0
+                context.downloadHost.onDownloadProgress(prgInfo)
+            }
             if (update) {
-                Logger.info("Progress $prgInfo")
                 context.downloadHost.onDownloadProgress(prgInfo)
             }
             val now = System.currentTimeMillis()
@@ -657,26 +736,31 @@ abstract class StreamingDownloaderTask(
     }
 
     private fun onChunkComplete(pc: StreamingChunk, latch: CountDownLatch) {
-        Logger.info("onChunkComplete")
         latch.countDown()
         synchronized(this) {
-            Logger.info("onChunkComplete in - $pc")
             if (context.stopFlag.get()) return
             if (pc.status.get() == ChunkStatus.Finished) {
                 context.pieceCompletedCount.addAndGet(1)
-                Logger.info("total completed ${context.pieceCompletedCount.get()} of ${context.chunks.size}")
-//                val pc2 = context.chunks.find { it.status.get() == ChunkStatus.Failed }
-//                if (pc2 != null) {
-//                    val pg = createPieceGrabber(pc2, latch)
-//                    executorService.submit(pg)
-//                } else {
-//                    latch.countDown()
-//                }
-            } else {
-                Logger.info("Chunk failed- $pc")
-//                latch.countDown()
+            } else if (pc.status.get() == ChunkStatus.Failed) {
+                lastFailure = pc.error.get()
             }
             saveContext()
+        }
+    }
+
+    /**
+     * A segment starts ([until] > 0) or stops waiting to ask again. While the whole download is stalled, the
+     * progress says when the next attempt is due ([DownloadStatusInfo.ProgressInfo.retryAt]).
+     */
+    private fun onChunkWait(pc: StreamingChunk, until: Long) {
+        if (until > 0) waits[pc.id] = until else waits.remove(pc.id)
+        synchronized(this) {
+            if (context.stopFlag.get()) return
+            val at = if (clock.stalled()) waits.values.minOrNull() ?: 0L else 0L
+            if (at != prgInfo.retryAt && (at != 0L || until > 0)) {
+                prgInfo.retryAt = at
+                context.downloadHost.onDownloadProgress(prgInfo)
+            }
         }
     }
 
@@ -690,6 +774,8 @@ abstract class StreamingDownloaderTask(
         progressCallback = this::onChunkProgress,
         fileNameCallback = this::getChunkTempFileName,
         maxRetries = config.maxRetries,
+        clock = clock,
+        waitCallback = this::onChunkWait,
     ) { p ->
         onChunkComplete(p, latch)
     }

@@ -43,10 +43,12 @@ class TestBatchDownload {
         root = Files.createTempDirectory("xdm-batch").toFile()
         configDir = File(root, "config").apply { mkdirs() }
         server = MockHttpServer()
+        FastRetries.install()
     }
 
     @AfterEach
     fun tearDown() {
+        FastRetries.reset()
         server.stop()
         root.deleteRecursively()
     }

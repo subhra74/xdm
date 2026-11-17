@@ -40,6 +40,8 @@ enum class DownloadError {
     OutputWriteError,
     /** The user stopped a move that was copying across volumes. The part file is still where it was. */
     Cancelled,
+    /** The server kept answering "busy" (429, 5xx, or a refusal with Retry-After) and nothing downloaded for minutes. */
+    ServerBusy,
 }
 
 enum class PauseEvent {
@@ -343,6 +345,11 @@ sealed interface DownloadStatusInfo {
         var filesTotal: Int = 0,
         /** Torrent only, null for other types. */
         var torrent: TorrentProgress? = null,
+        /**
+         * Wall-clock time (ms) the next attempt of a stalled download is due, while every connection waits on the
+         * server; 0 when not waiting.
+         */
+        var retryAt: Long = 0,
     )
 
     /** The torrent part of a progress update (see [ProgressInfo.torrent]). */

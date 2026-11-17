@@ -126,8 +126,12 @@ class BatchDownloaderTask(
         for (f in context.files) takenNames.add(nameOf(f).lowercase())
     }
 
+    /** When the batch last received data, shared by its items (see [xdm.core.util.RetryPolicy]). */
+    private val clock = xdm.core.util.DownloadClock()
+
     override fun start() {
         if (!startRequested.compareAndSet(false, true)) return
+        clock.startRun()
         Thread { download() }.start()
     }
 
@@ -243,6 +247,7 @@ class BatchDownloaderTask(
             cookie = task.cookies.getOrNull(item.cookieGroup),
             stopFlag = stopFlag,
             maxRetries = config.maxRetries,
+            clock = clock,
             listener = this,
         )
         return Runnable {
@@ -281,6 +286,7 @@ class BatchDownloaderTask(
                 cookie = task.cookies.getOrNull(item.cookieGroup),
                 stopFlag = stopFlag,
                 maxRetries = config.maxRetries,
+                clock = clock,
                 listener = TrackListener(f, left),
             )
             executor.submit(retriever)

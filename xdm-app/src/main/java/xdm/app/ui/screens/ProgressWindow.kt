@@ -132,7 +132,10 @@ class ProgressWindow(val id: Long) : JFrame() {
         files: BatchFileCounts? = null,
     ) {
         // Muxing reports progress through the same call, with [prg] as the assembling percent and no segments.
-        val assembling = synchronized(AppContext.db) { AppContext.db.getById(id)?.status == RecordStatus.ASSEMBLING }
+        val record = synchronized(AppContext.db) { AppContext.db.getById(id) }
+        val assembling = record?.status == RecordStatus.ASSEMBLING
+        // Every connection is waiting on a busy server: say when the next attempt is due.
+        val retryAt = record?.retryAt?.takeIf { it > System.currentTimeMillis() && !assembling }
         lblStat.text = files?.let { batchFilesText(it) } ?: text(if (assembling) "STAT_ASSEMBLING" else "DWN_TITLE")
         lblFileName.text = fileName
         title = "[ $prg% ] $fileName"
@@ -161,7 +164,9 @@ class ProgressWindow(val id: Long) : JFrame() {
             }
         }
         lblStat2.text = textBuf.toString()
-        if (speed > 0) {
+        if (retryAt != null) {
+            lblStat3.text = retryAtText(retryAt)
+        } else if (speed > 0) {
             lblStat3.text = "Speed " + formatSize(speed.toDouble()) + "/s"
         } else {
             lblStat3.text = "Speed ---"
@@ -461,9 +466,14 @@ fun downloadErrorText(error: DownloadError): String {
         DownloadError.DecryptionError -> text("ERR_DECRYPT")
         DownloadError.OutputWriteError -> text("ERR_OUTPUT_WRITE")
         DownloadError.MuxError -> text("ERR_MUX")
+        DownloadError.ServerBusy -> text("ERR_SERVER_BUSY")
         else -> text("ERR_INTERNAL")
     }
 }
+
+/** "Server busy, retrying at 14:32:05": a download whose every connection waits on a busy server. */
+fun retryAtText(at: Long): String =
+    String.format(text("STAT_RETRY_AT"), java.text.DateFormat.getTimeInstance(java.text.DateFormat.MEDIUM).format(java.util.Date(at)))
 
 /**
  * The website page explaining [error] and how to fix it, or null when there is nothing to fix
@@ -483,6 +493,7 @@ fun downloadErrorHelpUrl(error: DownloadError): String? {
         DownloadError.DecryptionError -> "decryption-error"
         DownloadError.OutputWriteError -> "cannot-save-file"
         DownloadError.Cancelled -> return null
+        DownloadError.ServerBusy -> "server-busy"
     }
     return "$WEBSITE_URL/help/errors/$slug/"
 }

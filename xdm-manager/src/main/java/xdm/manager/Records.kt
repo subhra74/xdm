@@ -69,6 +69,11 @@ data class DbRecord(
     var seeding: Boolean = false,
     /** Torrent only: the latest torrent figures while it downloads or seeds; null otherwise. Not persisted. */
     var torrent: DownloadStatusInfo.TorrentProgress? = null,
+    /**
+     * While downloading: wall-clock time the next attempt is due when every connection waits on a busy server
+     * (see [DownloadStatusInfo.ProgressInfo.retryAt]); 0 otherwise. Not persisted.
+     */
+    var retryAt: Long = 0,
 )
 
 data class QueueItem(val id: Long, val resume: Boolean)

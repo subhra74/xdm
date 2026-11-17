@@ -11,7 +11,10 @@ import xdm.core.network.http.HttpResponse
 import xdm.core.network.http.Range
 import xdm.core.network.http.isTlsVerificationError
 import xdm.core.util.Logger
-import xdm.core.util.getRetryDelay
+import xdm.core.util.PartRetry
+import xdm.core.util.RetryDecision
+import xdm.core.util.RetryPolicy
+import xdm.core.util.Trouble
 import xdm.core.util.isLinkExpiredStatus
 import xdm.core.storage.PositionalOutput
 import xdm.core.storage.RandomAccessOutput
@@ -51,7 +54,10 @@ class HttpChunkRetriever(
     private fun retrieveChunkInternal() {
         var retryCount = 0
         var maxByteRange: Long? = null
-        var retryAfter = 5L
+        // How long to wait before the next attempt.
+        var waitMs = 5000L
+        // Busy servers and refusals while the download receives data: RetryPolicy's rules, not maxRetries.
+        val partRetry = PartRetry(controller.clock, config.maxRetries)
 
         while (!isCancelled()) {
             // Check if already completed in case of resume
@@ -75,7 +81,7 @@ class HttpChunkRetriever(
                         // redirected somewhere fresh): later requests go there.
                         res.finalUrl?.let { context.finalUrl = it }
                         // A Retry-After applies only to the attempt right after that response.
-                        retryAfter = 5L
+                        waitMs = 5000L
                         val len = res.contentLength ?: -1L
                         if (len > 0) maxByteRange = data.offset + len
                         Logger.info("XDM", "Chunk connected $id")
@@ -102,6 +108,7 @@ class HttpChunkRetriever(
                             // The connection delivered data before failing (e.g. a read timeout on a
                             // slow link): keep going without using up retries.
                             retryCount = 0
+                            partRetry.onData()
                             true
                         } else {
                             // Nothing received on this attempt, e.g. a server that stalls: count it.
@@ -118,18 +125,26 @@ class HttpChunkRetriever(
                 }
 
                 ConnectResult.LinkExpired -> when (controller.onLinkRefused(id)) {
-                    // The link works for the other connections: wait as after a 429, without using up retries.
-                    Refusal.Busy -> {
-                        retryAfter = BUSY_RETRY_SECS
+                    // The download is still receiving data: a connection limit. Wait without using up retries.
+                    Refusal.Wait -> {
+                        waitMs = partRetry.backoff()
                         true
-                    }
-                    Refusal.Retry -> {
-                        retryCount += 1
-                        retryAfter = REFUSED_RETRY_SECS
-                        onRetry(retryCount)
                     }
                     Refusal.Expired -> {
                         chunkFailed(DownloadError.LinkExpired)
+                        false
+                    }
+                }
+
+                is ConnectResult.ServerTrouble -> when (val d = partRetry.next(Trouble.Server, connectResult.retryAfterMs)) {
+                    is RetryDecision.Wait -> {
+                        Logger.info("XDM", "Chunk $id: server busy, again in ${d.ms} ms")
+                        waitMs = d.ms
+                        true
+                    }
+                    is RetryDecision.GiveUp -> {
+                        Logger.info("XDM", "Chunk $id: server busy for too long, giving up")
+                        chunkFailed(d.error)
                         false
                     }
                 }
@@ -153,13 +168,20 @@ class HttpChunkRetriever(
                         false
                     } else {
                         retryCount += 1
-                        retryAfter = connectResult.delay
+                        waitMs = connectResult.delay * 1000
                         onRetry(retryCount)
                     }
                 }
             }
             if (isCancelled() || !shouldRetry) return
-            sleepUnlessCancelled(retryAfter * 1000)
+            if (waitMs > 0) {
+                controller.onChunkWait(id, System.currentTimeMillis() + waitMs)
+                try {
+                    sleepUnlessCancelled(waitMs)
+                } finally {
+                    controller.onChunkWait(id, 0)
+                }
+            }
         }
     }
 
@@ -181,7 +203,15 @@ class HttpChunkRetriever(
         val headers = context.rangeHeaders(bounded = endRange != null)
         val response = context.httpClient.getResponse(requestUrl, headers, context.cookie, range)
         response.onSuccess { r ->
-            if (isLinkExpiredStatus(r.statusCode, r.getHeader("WWW-Authenticate"))) {
+            val retryAfter = if (r.statusCode in 200..299) null else RetryPolicy.retryAfterMs(r.getHeader("Retry-After"))
+            val authenticate = r.getHeader("WWW-Authenticate")
+            // A refusal that says when to come back is a busy server, not a dead link, even on the first request.
+            if (retryAfter != null && isLinkExpiredStatus(r.statusCode, authenticate)) {
+                Logger.info("XDM", "Chunk: $id - refused with ${r.statusCode} and Retry-After: server busy")
+                r.close()
+                return ConnectResult.ServerTrouble(retryAfter)
+            }
+            if (isLinkExpiredStatus(r.statusCode, authenticate)) {
                 // The link redirected to a target that is now refused, as a short-lived signed URL is once
                 // it expires: go back through the link, which redirects to a fresh one.
                 if (requestUrl != context.url) {
@@ -198,7 +228,9 @@ class HttpChunkRetriever(
                     return ConnectResult.LinkExpired
                 }
             }
-            if (isFatalStatus(r.statusCode)) {
+            if (r.statusCode !in 200..299 && RetryPolicy.classify(r.statusCode, authenticate, retryAfter != null) != Trouble.Server) {
+                // 416 among them: the range does not exist, and asking again cannot change that.
+                Logger.error("XDM", "Invalid status code: ${r.statusCode}")
                 r.close()
                 return ConnectResult.InvalidResponse
             }
@@ -225,12 +257,7 @@ class HttpChunkRetriever(
                 return ConnectResult.Connected(r)
             } else {
                 r.close()
-                var retryAfter = 5L
-                if (r.statusCode == 429) {
-                    retryAfter = min(getRetryDelay(r.getHeader("retry-after"), 5), MAX_RETRY_AFTER_SECS)
-                    Logger.info("Rate limit hit: Will wait for $retryAfter sec")
-                }
-                return ConnectResult.Retry(retryAfter)
+                return ConnectResult.ServerTrouble(retryAfter)
             }
         }
         response.onFailure { t ->
@@ -461,24 +488,6 @@ class HttpChunkRetriever(
         }
     }
 
-    private fun isFatalStatus(code: Int): Boolean {
-        // 416 is not here: the range does not exist, and asking again cannot change that.
-        if (code != 200
-            && code != 206
-            && code != 429
-            && code != 413
-            && code != 408
-            && code != 500
-            && code != 502
-            && code != 503
-            && code != 504
-        ) {
-            Logger.error("XDM", "Invalid status code: $code")
-            return true
-        }
-        return false
-    }
-
     private fun makeRange(data: RequestData): Pair<Long, Long?> {
         if (data.length <= 0) {
             Logger.info("XDM", "No length for chunk, using offset only")
@@ -567,11 +576,6 @@ class HttpChunkRetriever(
     }
 
     private companion object {
-        const val MAX_RETRY_AFTER_SECS = 60L
-        /** Wait before asking again after [Refusal.Retry]. */
-        const val REFUSED_RETRY_SECS = 2L
-        /** Wait before asking again after [Refusal.Busy]: the default 429 backoff. */
-        const val BUSY_RETRY_SECS = 5L
         const val RETRY_SLEEP_STEP_MS = 200L
         /**
          * Bytes gathered before each write. Must stay at most 128 KB: a split only happens with
