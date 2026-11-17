@@ -107,6 +107,7 @@ class ClassicListRow(
         val selected = table.isRowSelected(vr)
         if (wash.selected != selected) {
             wash.selected = selected
+            row.selected = selected
             wash.repaint()
         }
     }
@@ -122,6 +123,7 @@ class ClassicListRow(
         row.showFileIcon(ent)
         row.update(ent, showButtons = true)
         wash.selected = isSelected
+        row.selected = isSelected
     }
 
     override fun getTableCellRendererComponent(

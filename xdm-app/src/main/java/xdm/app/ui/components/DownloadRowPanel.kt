@@ -76,6 +76,9 @@ class DownloadRowPanel(val root: JPanel = JPanel()) {
      */
     private val iconCache = HashMap<String, Icon>()
 
+    /** Glyph of each row button, so [selected] can redraw it in the other color. Declared before `init`, which fills it. */
+    private val buttonGlyphs = LinkedHashMap<JButton, RemixIcon>()
+
     /** Icon for a file that matches no category, and for the neutral pre-render state. */
     val defaultIcon: Icon get() = tileIcon(CategoryStyle.ALL_ICON, AppTheme.tile(null as DownloadCategory?).glyph)
 
@@ -122,7 +125,7 @@ class DownloadRowPanel(val root: JPanel = JPanel()) {
         lblInfo = JLabel("Some long title name for testing")
         lblInfo.verticalAlignment = SwingConstants.TOP
         lblInfo.font = lblTitle.font.deriveFont(12.0f.px)
-        lblInfo.foreground = Color.GRAY
+        lblInfo.foreground = AppTheme.listInfoForeground
         lblTitle.alignmentX = 0f
         lblInfo.alignmentX = 0f
         lines.add(lblTitle)
@@ -148,21 +151,21 @@ class DownloadRowPanel(val root: JPanel = JPanel()) {
         val buttonContainer = Box.createHorizontalBox()
         buttonContainer.border = ScaledEmptyBorder(10, 0, 10, 0)
 
-        btnPause = createButton(RemixIcon.PAUSE_CIRCLE_LINE, Color.GRAY) {
+        btnPause = createButton(RemixIcon.PAUSE_CIRCLE_LINE) {
             entry?.let {
                 Logger.info(it)
                 onPauseClick?.invoke(it)
             }
         }
-        btnResume = createButton(RemixIcon.PLAY_CIRCLE_LINE, Color.GRAY) {
+        btnResume = createButton(RemixIcon.PLAY_CIRCLE_LINE) {
             entry?.let {
                 Logger.info(it)
                 onResumeClick?.invoke(it)
             }
         }
-        btnDelete = createButton(RemixIcon.DELETE_BIN_LINE, Color.GRAY) { entry?.let { onDeleteClick?.invoke(it) } }
+        btnDelete = createButton(RemixIcon.DELETE_BIN_LINE) { entry?.let { onDeleteClick?.invoke(it) } }
         btnMenu = createButton(RemixIcon.MORE_2_FILL) { entry?.let { onMenuClick?.invoke(it) } }
-        btnOpenFolder = createButton(RemixIcon.FOLDER_6_LINE, Color.GRAY) { entry?.let { onOpenFolderClick?.invoke(it) } }
+        btnOpenFolder = createButton(RemixIcon.FOLDER_6_LINE) { entry?.let { onOpenFolderClick?.invoke(it) } }
 
         pauseGap = Box.createRigidArea(scaledSize(5, 10))
         resumeGap = Box.createRigidArea(scaledSize(5, 10))
@@ -189,17 +192,26 @@ class DownloadRowPanel(val root: JPanel = JPanel()) {
         this.buttonContainer = buttonContainer
     }
 
-    private fun createButton(
-        iconName: RemixIcon,
-        iconColor: Color = Color.GRAY,
-        e: ActionListener
-    ): JButton {
-        val btn = JButton(createIcon(iconName, 16, iconColor))
+    private fun createButton(iconName: RemixIcon, e: ActionListener): JButton {
+        val btn = JButton(tileIcon(iconName, AppTheme.listButtonColor))
         btn.putClientProperty("JButton.buttonType", "toolBarButton")
         btn.isFocusable = false
         btn.addActionListener(e)
+        buttonGlyphs[btn] = iconName
         return btn
     }
+
+    /**
+     * Whether the row sits on a selection card (Classic list): the subtitle and the button icons
+     * then take the theme's brighter selected colors. Icons come from [iconCache], so switching is a lookup.
+     */
+    var selected: Boolean = false
+        set(value) {
+            field = value
+            lblInfo.foreground = if (value) AppTheme.listSelectedInfoForeground else AppTheme.listInfoForeground
+            val color = if (value) AppTheme.listSelectedButtonColor else AppTheme.listButtonColor
+            for ((btn, glyph) in buttonGlyphs) btn.icon = tileIcon(glyph, color)
+        }
 
     val height: Int
         get() = root.preferredSize.height
