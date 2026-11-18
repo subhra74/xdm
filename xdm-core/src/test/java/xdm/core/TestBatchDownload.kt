@@ -67,9 +67,9 @@ class TestBatchDownload {
         BatchItem(url = server.url(path), fileName = name, cookieGroup = -1, knownSize = null, nameFromPage = nameFromPage)
 
     /** Runs [task] to the end and returns the host that saw it. */
-    private fun run(task: BatchDownloadTaskInfo): StreamingTestHost {
+    private fun run(task: BatchDownloadTaskInfo, config: CoreConfig = E2EConfig(4, maxRetries = 1)): StreamingTestHost {
         val host = StreamingTestHost(configDir.absolutePath, root.absolutePath, root.absolutePath)
-        BatchDownloaderTask(task, HttpClientImpl(8), host, configDir.absolutePath, E2EConfig(4, maxRetries = 1)).start()
+        BatchDownloaderTask(task, HttpClientImpl(8), host, configDir.absolutePath, config).start()
         assertTrue(host.latch.await(60, TimeUnit.SECONDS), "batch did not finish")
         return host
     }
@@ -91,6 +91,41 @@ class TestBatchDownload {
         }
         assertEquals(20, folder.list()!!.size, "only the 20 files, no part files left: ${folder.list()!!.toList()}")
         assertEquals(payloads.sumOf { it.size.toLong() }, success.fileSize, "size is the sum of the files")
+    }
+
+    @Test
+    fun serverDatesAreAppliedPerFileAfterRenaming() {
+        val dates = listOf("Thu, 11 Jun 2026 14:24:01 GMT", "Tue, 24 Aug 2021 18:41:56 GMT")
+        val expected = listOf(1781187841000L, 1629830516000L)
+        val payloads = listOf(data(30000, 40), data(40000, 41))
+        payloads.forEachIndexed { i, bytes -> server.register("/date-$i", Endpoint(bytes, lastModified = dates[i])) }
+        val t = task(40, listOf(item("/date-0", "a.bin"), item("/date-1", "b.bin")))
+        val folder = File(t.batchFolder).apply { mkdirs() }
+        val existing = File(folder, "a.bin").apply { writeText("keep") }
+        val originalTime = existing.lastModified()
+        run(t, TestConfig(4, getServerTime = true))
+        listOf("a_1.bin", "b.bin").forEachIndexed { i, name ->
+            val file = File(folder, name)
+            assertEquals(expected[i], file.lastModified())
+            assertArrayEquals(payloads[i], file.readBytes())
+        }
+        assertEquals(originalTime, existing.lastModified())
+        assertEquals("keep", existing.readText())
+    }
+
+    @Test
+    fun batchResumeUsesTheNewResponseDateWithAnAlreadySavedName() {
+        val bytes = data(50000, 42)
+        server.register("/date-resume", Endpoint(bytes, lastModified = "Thu, 11 Jun 2026 14:24:01 GMT"))
+        val t = task(42, listOf(item("/date-resume", "resume.bin")))
+        val folder = File(t.batchFolder).apply { mkdirs() }
+        batchPartFile(folder.absolutePath, 0).writeBytes(bytes.copyOf(20000))
+        saveBatchState(BatchTaskContext(42, folder.absolutePath,
+            listOf(BatchFile(0, downloaded = AtomicLong(20000), finalName = "resume.bin"))), configDir.absolutePath)
+        run(t, TestConfig(4, getServerTime = true))
+        val result = File(folder, "resume.bin")
+        assertArrayEquals(bytes, result.readBytes())
+        assertEquals(1781187841000L, result.lastModified())
     }
 
     @Test

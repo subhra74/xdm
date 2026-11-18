@@ -38,6 +38,10 @@ class BatchFile(
     @Volatile
     var merging: Boolean = false
 
+    /** Refreshed on resume; not persisted. */
+    @Volatile
+    var lastModifiedMillis: Long? = null
+
     val merged: Boolean get() = video != null
 
     /** The tracks this item downloads: itself for a plain item, video and audio for a merged one. */

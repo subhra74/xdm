@@ -177,6 +177,7 @@ abstract class HttpDownloadTestBase {
 class TestConfig(
     override var maxSegments: Int,
     override var maxRetries: Int = 5,
+    override var getServerTime: Boolean = false,
 ) : CoreConfig {
     override var speedLimit: Int = 0
     override var speedLimiterEnabled: Boolean = false
@@ -220,10 +221,13 @@ class TestDownloadHost(
     @Volatile
     var onCommit: (() -> Unit)? = null
 
+    var commitError: DownloadError? = null
+
     override fun getTempDir(id: Long, url: String, contentType: String?, contentDisposition: String?): String = tempDir
 
     override fun commitOutputFile(id: Long, part: StorageFile, downloadType: DownloadType, container: String?): CommitResult {
         onCommit?.invoke()
+        commitError?.let { return CommitResult.Failed(it) }
         val src = File(part.localPath!!)
         val dst = File(outDir, "out-$id.bin")
         if (dst.exists()) dst.delete()
