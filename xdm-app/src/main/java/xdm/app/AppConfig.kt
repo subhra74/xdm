@@ -96,7 +96,7 @@ interface IAppConfig : EngineConfig {
     var defVideoExtensions: List<String>
     override var blockedHosts: List<String>
     var defBlockedHosts: List<String>
-    var getServerTime: Boolean
+    override var getServerTime: Boolean
     override var maxSegments: Int
     override var maxRetries: Int
     override var useProxy: Boolean

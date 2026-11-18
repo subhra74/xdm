@@ -22,6 +22,7 @@ import xdm.core.media.muxer.Muxer
 import xdm.core.network.http.HttpResponse
 import xdm.core.network.http.PoolingHttpClient
 import xdm.core.util.FileUtils
+import xdm.core.storage.preserveServerTimestamp
 import xdm.core.util.Logger
 import xdm.core.util.fixExtension
 import xdm.core.util.getExtension
@@ -290,6 +291,7 @@ class BatchDownloaderTask(
     /** A merged item's track: no name to pick or rename, it stays in the track folder until merged. */
     private inner class TrackListener(private val item: BatchFile, private val left: AtomicInteger) : BatchFileListener {
         override fun onConnected(file: BatchFile, response: HttpResponse) {
+            file.lastModifiedMillis = response.lastModifiedMillis
             dirty.set(true)
         }
 
@@ -419,6 +421,7 @@ class BatchDownloaderTask(
     }
 
     override fun onConnected(file: BatchFile, response: HttpResponse) {
+        file.lastModifiedMillis = response.lastModifiedMillis
         val part = folder.file(batchPartName(file.index))
         if (!part.exists) runCatching { part.open(create = true).close() }
         if (file.finalName != null) return
@@ -464,6 +467,7 @@ class BatchDownloaderTask(
                 }
                 try {
                     folder.rename(part, name, replace = false)
+                    if (config.getServerTime) folder.preserveServerTimestamp(name, file.lastModifiedMillis)
                     file.finalName = name
                     dirty.set(true)
                     return null

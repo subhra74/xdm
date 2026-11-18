@@ -4,6 +4,7 @@
 
 package xdm.core.downloaders.web.http
 
+import okhttp3.Headers
 import xdm.core.CoreConfig
 import xdm.core.downloaders.*
 import xdm.core.downloaders.web.ProgressTracker
@@ -13,6 +14,7 @@ import xdm.core.network.http.HttpResponse
 import xdm.core.network.http.PoolingHttpClient
 import xdm.core.network.http.impl.HttpClientImpl
 import xdm.core.storage.prepareForWriting
+import xdm.core.storage.preserveServerTimestamp
 import xdm.core.util.Logger
 import xdm.core.util.CoreUtils
 import java.net.Proxy
@@ -353,6 +355,7 @@ class HttpDownloaderTask : ChunkController {
                         }
 
                         is CommitResult.Success -> {
+                            preserveServerTimestamp(res)
                             Logger.info("Time taken ${(now - time) / 1000.0f} sec")
                             context.downloadHost.onDownloadSuccess(
                                 DownloadStatusInfo.FinalInfo(
@@ -899,6 +902,17 @@ class HttpDownloaderTask : ChunkController {
         context.downloadHost.onDownloadProgress(prgInfo)
     }
 
+    /** Apply after closing writers and committing the final file. */
+    private fun preserveServerTimestamp(result: CommitResult.Success) {
+        if (!config.getServerTime) return
+        // validator stores Last-Modified across restarts.
+        val header = context.validator ?: return
+        val millis = runCatching {
+            Headers.Builder().add("Last-Modified", header).build().getDate("Last-Modified")?.time
+        }.getOrNull() ?: return
+        context.downloadHost.storage.folder(result.outputDir).preserveServerTimestamp(result.fileName, millis)
+    }
+
     private fun finishDownload() {
         if (!context.piecesMakeUpFile()) {
             // Saved as finished, but the part file is gone or does not match: a disk error, never published.
@@ -923,6 +937,7 @@ class HttpDownloaderTask : ChunkController {
                 }
 
                 is CommitResult.Success -> {
+                    preserveServerTimestamp(res)
                     saveState()
                     context.downloadHost.onDownloadSuccess(
                         DownloadStatusInfo.FinalInfo(

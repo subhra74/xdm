@@ -53,6 +53,9 @@ interface StorageFolder {
     /** Size of the file [name], or -1 when there is no such file. Never throws. */
     fun length(name: String): Long
 
+    /** Set mtime in epoch milliseconds; return false if unsupported. */
+    fun setLastModified(name: String, millis: Long): Boolean = false
+
     fun isFile(name: String): Boolean = length(name) >= 0
 
     /** Whether anything (file or folder) is named [name] here, so a new file cannot take that name. */

@@ -76,8 +76,15 @@ object OriginMarker {
     // java.io (not NIO, whose Path rejects the ':') opens "file:stream" as an alternate data stream;
     // this relies on jdk.io.File.enableADS, which is true by default. Replaces any existing stream.
     private fun markWindows(file: File, source: DownloadSource): Boolean {
-        FileOutputStream(file.absolutePath + ":Zone.Identifier").use {
-            it.write(zoneIdentifier(source).toByteArray(StandardCharsets.UTF_8))
+        // Writing an NTFS alternate stream also changes the file's mtime.
+        val modified = runCatching { Files.getLastModifiedTime(file.toPath()) }.getOrNull()
+        try {
+            FileOutputStream(file.absolutePath + ":Zone.Identifier").use {
+                it.write(zoneIdentifier(source).toByteArray(StandardCharsets.UTF_8))
+            }
+        } finally {
+            if (modified != null) runCatching { Files.setLastModifiedTime(file.toPath(), modified) }
+                .onFailure { Logger.info("OriginMarker", "Could not restore modification time: $it") }
         }
         return true
     }

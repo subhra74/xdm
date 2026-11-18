@@ -99,13 +99,16 @@ class OriginMarkerTest {
     @Test
     @EnabledOnOs(OS.WINDOWS)
     fun windows_writesZoneIdentifierStream() {
+        val expectedTime = java.nio.file.attribute.FileTime.fromMillis(1781187841000L)
         val file = File(dir, "a.exe").apply { writeText("x") }
+        Files.setLastModifiedTime(file.toPath(), expectedTime)
 
         assertTrue(OriginMarker.mark(file, DownloadSource("https://h/f", "https://r/")), "mark reported failure")
 
         val stream = FileInputStream(file.absolutePath + ":Zone.Identifier").use { it.readBytes().toString(Charsets.UTF_8) }
         assertEquals(OriginMarker.zoneIdentifier(DownloadSource("https://h/f", "https://r/")), stream)
         assertEquals("x", file.readText(), "file contents untouched")
+        assertEquals(expectedTime, Files.getLastModifiedTime(file.toPath()), "server date survives the security mark")
         assertEquals(listOf("a.exe"), dir.list()!!.toList(), "no separate file created")
     }
 }

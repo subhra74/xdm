@@ -7,6 +7,8 @@ package xdm.core
 import java.net.Proxy
 
 interface CoreConfig {
+    val getServerTime: Boolean get() = false
+
     var speedLimit: Int
     var speedLimiterEnabled: Boolean
     var maxSegments: Int

@@ -33,6 +33,11 @@ private class LocalFolder(private val dir: File) : StorageFolder {
     override fun exists() = dir.isDirectory
     override fun create() = dir.isDirectory || dir.mkdirs() || dir.isDirectory
     override fun exists(name: String) = f(name).exists()
+    override fun setLastModified(name: String, millis: Long): Boolean {
+        java.nio.file.Files.setLastModifiedTime(f(name).toPath(), java.nio.file.attribute.FileTime.fromMillis(millis))
+        return true
+    }
+
     override fun length(name: String): Long = f(name).let { if (it.isFile) it.length() else -1 }
 
     override fun open(name: String, create: Boolean): RandomAccessOutput {
