@@ -212,16 +212,16 @@
         <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no"
                  Text="!(loc.InstallDirDlgBannerBitmap)" />
         <Control Id="Title" Type="Text" X="15" Y="6" Width="270" Height="15" Transparent="yes" NoPrefix="yes"
-                 Text="{\WixUI_Font_Title}Torrents" />
+                 Text="{\WixUI_Font_Title}Firewall" />
         <Control Id="Description" Type="Text" X="25" Y="23" Width="280" Height="15" Transparent="yes" NoPrefix="yes"
-                 Text="Let other computers connect to Xtreme Download Manager." />
+                 Text="Add a Windows Firewall exception for torrents." />
         <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="370" Height="0" />
         <Control Id="Info" Type="Text" X="20" Y="60" Width="330" Height="40" NoPrefix="yes"
                  Text="Torrents download faster when other computers can connect to yours. Windows Firewall blocks these incoming connections until they are allowed." />
         <Control Id="FirewallCheckBox" Type="CheckBox" X="20" Y="104" Width="330" Height="18"
                  Property="XDMFIREWALL" CheckBoxValue="1"
                  DisableCondition="MSIINSTALLPERUSER = 1"
-                 Text="Allow torrent connections through Windows Firewall (recommended)" />
+                 Text="Add Windows Firewall exception (recommended)" />
         <Control Id="Note" Type="Text" X="20" Y="130" Width="330" Height="60" NoPrefix="yes"
                  HideCondition="MSIINSTALLPERUSER = 1"
                  Text="Adds an incoming rule for Xtreme Download Manager only. It is removed when Xtreme Download Manager is uninstalled. Without it, Windows asks the first time a torrent starts." />
