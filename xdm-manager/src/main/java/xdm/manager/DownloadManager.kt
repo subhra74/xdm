@@ -285,6 +285,7 @@ class DownloadManager(
                         it.speed = event.speed
                         it.eta = event.eta
                         it.torrent = event.torrent
+                        it.retryAt = event.retryAt
                         size = it.size
                         fileName = it.fileName
                     }

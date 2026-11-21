@@ -32,6 +32,8 @@ object ManifestUtils {
         onError: ((Throwable) -> Unit)? = null,
         onHttpError: ((Int) -> Unit)? = null,
         maxBytes: Long = MAX_MANIFEST_BYTES,
+        /** The response that was neither 200 nor 206, before it is closed (status and headers, for retrying). */
+        onErrorResponse: ((HttpResponse) -> Unit)? = null,
     ): ByteArray? {
         downloadManifestAsFile(
             httpClient,
@@ -42,6 +44,7 @@ object ManifestUtils {
             onError,
             onHttpError,
             maxBytes,
+            onErrorResponse,
         )?.let {
             val tempFile = File(it)
             try {
@@ -67,6 +70,8 @@ object ManifestUtils {
         onHttpError: ((Int) -> Unit)? = null,
         /** A longer body is abandoned and reported to [onError] as a [ManifestTooLargeException]. */
         maxBytes: Long = MAX_MANIFEST_BYTES,
+        /** The response that was neither 200 nor 206, before it is closed (status and headers, for retrying). */
+        onErrorResponse: ((HttpResponse) -> Unit)? = null,
     ): String? {
         try {
             Logger.info("XDM","Downloading manifest: $url")
@@ -77,10 +82,10 @@ object ManifestUtils {
                 it.use { response ->
                     if (stopFlag.get()) return null
                     val code: Int = response.statusCode
-                    Logger.info("Manifest download", "Return code: $code")
                     if (code != 200 && code != 206) {
-                        Logger.error("Manifest download failed")
+                        Logger.error("XDM", "Manifest download failed: $code")
                         onHttpError?.invoke(code)
+                        onErrorResponse?.invoke(response)
                         return null
                     }
                     response.contentLength?.let { if (it > maxBytes) throw ManifestTooLargeException(maxBytes) }

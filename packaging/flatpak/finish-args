@@ -1,0 +1,20 @@
+# Sandbox permissions for the bundle, one flatpak build-finish argument per line (private-docs/docs/flatpak.md §3).
+# Portals (file chooser, Inhibit, OpenURI, Settings) need no permission.
+--share=network
+--share=ipc
+--socket=wayland
+--socket=fallback-x11
+# Downloads anywhere in home; also reaches ~/.config/autostart for the login entry (AutoStart).
+--filesystem=home
+# Removable drives: udisks2 (Fedora, Arch, openSUSE), Debian/Ubuntu, manual mounts.
+--filesystem=/media
+--filesystem=/run/media
+--filesystem=/mnt
+# Open the folder with the file selected (LinuxUtils.showItem).
+--talk-name=org.freedesktop.FileManager1
+--talk-name=org.freedesktop.Notifications
+# Tray: DBusTray owns org.kde.StatusNotifierItem-<pid>-1, and the app is pid 2 in the sandbox.
+--talk-name=org.kde.StatusNotifierWatcher
+--own-name=org.kde.StatusNotifierItem-2-1
+# Shutdown after downloads (LinuxUtils.shutdownCmds: logind PowerOff on the system bus).
+--system-talk-name=org.freedesktop.login1

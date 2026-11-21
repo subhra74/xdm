@@ -2,6 +2,7 @@ package xdm.app.utils.linux
 
 import xdm.app.AppContext
 import xdm.app.I8N
+import xdm.app.utils.AppLauncher
 import xdm.app.utils.linux.dbus.Variant
 import xdm.app.utils.logoImage
 import xdm.core.util.Logger
@@ -65,6 +66,8 @@ internal object DBusNotifications {
                 val hints = buildMap<String, Any> {
                     // Ties the notification to the menu entry the deb/rpm installs (icon, settings).
                     if (File("/usr/share/applications/xdman.desktop").isFile) put("desktop-entry", Variant("s", "xdman"))
+                    // A Flatpak's menu entry is named after its app ID.
+                    AppLauncher.flatpakId?.let { put("desktop-entry", Variant("s", it)) }
                 }
                 val id = bus.call(
                     NAME, PATH, NAME, "Notify", "susssasa{sv}i",

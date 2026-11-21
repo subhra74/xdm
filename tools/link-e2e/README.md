@@ -3,10 +3,11 @@
 How to check two behaviours of HTTP downloads, first in the Maven test suite and then end to end in the
 real app against a local test server:
 
-1. **Connection limit.** Some CDNs answer one connection too many with **403**, not 429, while the
-   connections they admitted keep downloading. That is not an expired link. The download backs off
-   (5 s, as after a 429), retries, and finishes. A 403 is still an expired link when no other segment
-   of the download is getting data.
+1. **Connection limit.** Some CDNs answer one connection too many with **403** (or a 5xx, or another 4xx),
+   not 429, while the connections they admitted keep downloading. That is not an expired link. The refused
+   connection waits (Retry-After when sent, else 1, 2, 4, 8, then 10 s) and asks again without using up
+   retries, and the download finishes. A 403 is an expired link once the download has received nothing for
+   15 s (counted from the start of the run too); a 403 with Retry-After is always a busy server.
 2. **Expired link refreshed from its source link.** When the browser was redirected from a site's
    download link to a short-lived signed file URL, the extension sends that first link as `sourceUrl`
    (and that host's cookies as `sourceCookie`). When the signed URL expires, XDM asks the source link

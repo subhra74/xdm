@@ -54,6 +54,7 @@ abstract class HttpDownloadTestBase {
 
     @BeforeEach
     fun setup() {
+        FastRetries.install()
         server = MockHttpServer()
         work = Files.createTempDirectory("xdm-http-test").toFile()
         tmpDir = File(work, "tmp").apply { mkdirs() }
@@ -70,6 +71,7 @@ abstract class HttpDownloadTestBase {
         server.stop()
         rawServers.forEach { runCatching { it.stop() } }
         work.deleteRecursively()
+        FastRetries.reset()
     }
 
     protected fun download(id: Long, path: String, maxSegments: Int): TestDownloadHost {
@@ -87,8 +89,8 @@ abstract class HttpDownloadTestBase {
     /** [maxPiece] is the segment count saved with the download; 0 leaves it to the config. */
     protected fun newTaskForUrl(
         id: Long, url: String, host: TestDownloadHost, config: CoreConfig, maxPiece: Int = 0,
+        client: HttpClientImpl = HttpClientImpl(8),
     ): HttpDownloaderTask {
-        val client = HttpClientImpl(8)
         clients.add(client)
         val info = HttpDownloadTaskInfo(
             id = id,

@@ -31,6 +31,10 @@
 </p>
 
 <p align="center">
+  <img src="screenshots/xdm-hero.webp" width="640" alt="Xtreme Download Manager"/>
+</p>
+
+<p align="center">
   <!-- <a href="https://www.youtube.com/watch?v=qrUUSFh3Xfg"><img src="docs/assets/xdm-quick-start-thumbnail.jpg" width="280" alt="Watch the XDM quick start guide on YouTube"/></a>
   &nbsp; -->
   <a href="https://www.youtube.com/watch?v=H_wdSvOBqKA&t=19s"><img src="docs/assets/xdm-quick-start-thumbnail.jpg" width="280" alt="Watch the XDM setup guide on YouTube"/></a>
@@ -243,7 +247,6 @@ desktop app (`xdm-app`) and the browser extensions are under GPL v3.
 
 XDM is a general-purpose download manager intended for lawful use only.
 
-- XDM does not support downloading from YouTube.
 - XDM does not support DRM-protected content and does not circumvent DRM or any other technical protection measure.
 - Use XDM only to download content that you own or are authorized to download, in compliance with applicable laws
   and the terms of service of the websites you use.

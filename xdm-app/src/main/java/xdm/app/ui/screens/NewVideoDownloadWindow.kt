@@ -4,6 +4,7 @@ import com.formdev.flatlaf.FlatClientProperties
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import xdm.app.AppContext
 import xdm.app.I8N.text
+import xdm.app.VideoDownloadDefaults
 import xdm.app.ui.components.CategoryStyle
 import xdm.app.ui.components.DestinationPicker
 import xdm.app.ui.components.MessageBox
@@ -422,10 +423,8 @@ class NewVideoDownloadWindow : JDialog(null as Window?) {
     private fun srtChoiceChanged() {
         val format = capturedSubtitle?.format ?: return
         val name = txtFileName.text
-        val (from, to) = if (chkSaveAsSrt.isSelected) format.ext to "srt" else "srt" to format.ext
-        if (name.endsWith(".$from", ignoreCase = true)) {
-            txtFileName.text = name.dropLast(from.length) + to
-        }
+        val swapped = VideoDownloadDefaults.srtName(name, format.ext, chkSaveAsSrt.isSelected)
+        if (swapped != name) txtFileName.text = swapped
     }
 
     /** One dropdown entry; a null [track] is None. */
@@ -441,16 +440,11 @@ class NewVideoDownloadWindow : JDialog(null as Window?) {
         val choices = listOf(SubtitleChoice(null, text("ND_SUBTITLES_NONE"))) +
             tracks.map { SubtitleChoice(it, subtitleLabel(it)) }
         cmbSubtitles.model = DefaultComboBoxModel(choices.toTypedArray())
-        val system = Locale.getDefault().language
-        val pick = tracks.sortedBy { it.forced }.firstOrNull { sameLanguage(it.language, system) }
-            ?: tracks.firstOrNull { it.isDefault && !it.forced }
+        val pick = VideoDownloadDefaults.defaultSubtitle(tracks)
         cmbSubtitles.selectedIndex = pick?.let { tracks.indexOf(it) + 1 } ?: 0
         lblSubtitles.isVisible = tracks.isNotEmpty()
         cmbSubtitles.isVisible = tracks.isNotEmpty()
     }
-
-    private fun sameLanguage(tag: String, language: String): Boolean =
-        tag.isNotBlank() && Locale.forLanguageTag(tag).language.equals(language, ignoreCase = true)
 
     /** The manifest's name for the track, else its language's name in the UI language. */
     private fun subtitleLabel(track: SubtitleTrack): String {

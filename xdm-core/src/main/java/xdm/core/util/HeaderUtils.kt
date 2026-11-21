@@ -16,7 +16,8 @@ private val URL_PATTERN by lazy { Regex("https?://([^/:]*)/?") }
  * Basic, NTLM or Negotiate. Those are a login the user can answer (see `HttpAuth`), so not an expiry.
  */
 fun isLinkExpiredStatus(code: Int, wwwAuthenticate: String?): Boolean = when (code) {
-    403, 410 -> true
+    // 419: session/page expired; 440: login timed out; 498: invalid or expired token.
+    403, 410, 419, 440, 498 -> true
     401 -> LOGIN_SCHEMES.none { wwwAuthenticate?.contains(it, ignoreCase = true) == true }
     else -> false
 }
@@ -67,13 +68,14 @@ fun getRetryDelay(retryAfter: String?, defaultDelay: Long = 5): Long {
     if (retryAfter != null) {
         try {
             // First, try to parse as a delta-seconds value
-            return retryAfter.toLong()
+            // 0 or negative is no delay at all: asking again at once is what the server just refused.
+            return retryAfter.trim().toLong().let { if (it > 0) minOf(it, 300) else defaultDelay }
         } catch (e: NumberFormatException) {
             // If it's not a number, try to parse as an HTTP-date
             try {
                 val date = fmt.parse(retryAfter)
                 val delaySeconds = (date.time - System.currentTimeMillis()) / 1000
-                return if (delaySeconds > 0) delaySeconds else 0
+                return if (delaySeconds > 0) minOf(delaySeconds, 300) else defaultDelay
             } catch (ex: Exception) {
                 Logger.error("Failed to parse Retry-After header as date: $retryAfter", ex)
             }

@@ -51,6 +51,7 @@ abstract class StreamingE2EBase {
 
     @BeforeEach
     fun setup() {
+        FastRetries.install()
         root = java.nio.file.Files.createTempDirectory("xdm-stream-e2e").toFile()
         server = FileServer(root)
     }
@@ -62,6 +63,7 @@ abstract class StreamingE2EBase {
         clients.forEach { runCatching { it.close() } }
         server.stop()
         root.deleteRecursively()
+        FastRetries.reset()
     }
 
     protected fun newClient(): HttpClientImpl = HttpClientImpl(8).also { clients.add(it) }

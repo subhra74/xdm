@@ -141,8 +141,8 @@ class TestHttpRetryHandling : HttpDownloadTestBase() {
     @Test
     fun pauseDuringRetryWait_chunkThreadExitsPromptly() {
         val bytes = randomData(64 * 1024, seed = 42)
-        // Every attempt is a retryable 503, so the chunk thread sits in its 5s retry wait.
-        val ep = server.register("/retrywait", Endpoint(bytes, plan = { ConnPlan(failStatus = 503) }))
+        // Every attempt is a 503 asking for 5 s, so the chunk thread sits in a 5 s retry wait.
+        val ep = server.register("/retrywait", Endpoint(bytes, plan = { ConnPlan(failStatus = 503, retryAfterSecs = 5) }))
         val host = host()
         val task = newTask(id = 42, path = "/retrywait", host = host, maxSegments = 1)
         task.start()

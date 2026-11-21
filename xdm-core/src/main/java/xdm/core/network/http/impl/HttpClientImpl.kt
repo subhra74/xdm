@@ -265,10 +265,13 @@ class HttpClientImpl @JvmOverloads constructor(
             val finalUrl = response.request.url.toUri().toASCIIString()
             val redirected = response.priorResponse?.isRedirect ?: false
 
+            // Only answers that are not data: a segmented download makes thousands of requests.
             // Set-Cookie values are session credentials; log that they came, not what they are.
-            Logger.info(response.headers.joinToString("\n") { (name, value) ->
-                if (name.equals("Set-Cookie", ignoreCase = true)) "$name: <redacted>" else "$name: $value"
-            })
+            if (response.code !in 200..299) {
+                Logger.info("HTTP ${response.code} ${request.url.host}\n" + response.headers.joinToString("\n") { (name, value) ->
+                    if (name.equals("Set-Cookie", ignoreCase = true)) "$name: <redacted>" else "$name: $value"
+                })
+            }
 
             HttpResponseImpl(
                 contentDisposition = response.headers.get("Content-Disposition"),

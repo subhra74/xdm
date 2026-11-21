@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Shown by GNOME Software and KDE Discover when the .flatpak bundle is opened (private-docs/docs/flatpak.md). -->
+<component type="desktop-application">
+  <id>com.xtremedownloadmanager.XDM</id>
+  <name>Xtreme Download Manager</name>
+  <summary>Download accelerator and video downloader</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-only</project_license>
+  <developer id="com.xtremedownloadmanager">
+    <name>Subhra Das Gupta</name>
+  </developer>
+  <!-- Older AppStream readers (Flatpak 1.12 era) only know developer_name. -->
+  <developer_name>Subhra Das Gupta</developer_name>
+  <description>
+    <p>
+      Segmented downloads, HLS and DASH video, and browser integration through the XDM browser extension.
+    </p>
+  </description>
+  <launchable type="desktop-id">com.xtremedownloadmanager.XDM.desktop</launchable>
+  <url type="homepage">https://xtremedownloadmanager.com</url>
+  <content_rating type="oars-1.1"/>
+  <releases>
+    <release version="@VERSION@" date="@DATE@"/>
+  </releases>
+</component>

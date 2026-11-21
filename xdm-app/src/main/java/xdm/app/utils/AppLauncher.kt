@@ -30,8 +30,20 @@ object AppLauncher {
     val isPackaged: Boolean
         get() = !System.getProperty("jpackage.app-path").isNullOrBlank()
 
+    /**
+     * The Flatpak app ID when XDM runs inside a Flatpak sandbox, else null. Flatpak sets `FLATPAK_ID`
+     * for every process it starts in the sandbox.
+     */
+    val flatpakId: String? get() = flatpakId(System::getenv)
+
+    internal fun flatpakId(env: (String) -> String?): String? = env("FLATPAK_ID")?.takeIf { it.isNotBlank() }
+
     /** The executable, with no arguments. Null when it cannot be worked out. */
     fun command(): List<String>? {
+        // Inside a Flatpak, jpackage.app-path is /app/bin/xdm-app, a path that exists only in the
+        // sandbox. The desktop runs login entries on the host, which starts the app through flatpak.
+        flatpakId?.let { return flatpakCommand(it) }
+
         // jpackage sets this to the absolute path of the launcher that started this process.
         System.getProperty("jpackage.app-path")?.takeIf { it.isNotBlank() }?.let { appPath ->
             return listOf(preferStableLauncher(File(appPath)).absolutePath)
@@ -66,6 +78,9 @@ object AppLauncher {
         val sibling = File(started.parentFile, stableName)
         return if (sibling.isFile) sibling else started
     }
+
+    /** The host command that starts the Flatpak [appId]; arguments after it go to the app. */
+    internal fun flatpakCommand(appId: String): List<String> = listOf("flatpak", "run", appId)
 
     /** [command] plus [args], as one command line with space-containing tokens quoted. */
     fun commandLine(vararg args: String): String? =

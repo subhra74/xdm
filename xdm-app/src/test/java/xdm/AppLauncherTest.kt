@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import xdm.app.utils.AppLauncher
+import xdm.app.utils.AutoStart
 import java.io.File
 import java.nio.file.Files
 
@@ -123,6 +124,26 @@ class AppLauncherTest {
             assertTrue(command.isNotEmpty(), "resolved an empty command")
             assertTrue(File(command[0]).exists(), "resolved a launcher that does not exist: ${command[0]}")
         }
+    }
+
+    @Test
+    fun flatpakIdComesFromTheEnvironment() {
+        assertEquals("com.xtremedownloadmanager.XDM",
+            AppLauncher.flatpakId { if (it == "FLATPAK_ID") "com.xtremedownloadmanager.XDM" else null })
+        assertEquals(null, AppLauncher.flatpakId { null }, "no FLATPAK_ID outside a sandbox")
+        assertEquals(null, AppLauncher.flatpakId { " " }, "a blank FLATPAK_ID is ignored")
+    }
+
+    @Test
+    fun flatpakLoginEntryStartsTheAppThroughFlatpak() {
+        val id = "com.xtremedownloadmanager.XDM"
+        val content = AutoStart.linuxDesktopContent(AppLauncher.flatpakCommand(id) + "--minimized", id)
+        assertTrue(content.contains("\nExec=flatpak run $id --minimized\n"), content)
+        assertTrue(content.contains("\nIcon=$id\n"), "a Flatpak exports its icon under the app ID")
+        assertTrue(
+            AutoStart.linuxDesktopContent(listOf("/opt/xdm-app/bin/xdm-app"), null).contains("\nIcon=xdm-app\n"),
+            "a deb/rpm install keeps the xdm-app icon"
+        )
     }
 
     private companion object {
