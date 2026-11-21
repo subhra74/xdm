@@ -62,6 +62,7 @@ ND_SAVE_AS_SRT=Save as SRT (plays in more players)
 ND_SAVE_AS_MP4=Save as MP4 where possible
 ND_SAVE_AS_MP4_TIP=Off: a TS stream is saved as .ts, as it is. Streams that can't go into MP4 are saved as MKV.
 ND_SUBTITLE_BADGE=Subtitle
+ND_PLAYLIST_CAPTURED_HINT=Ready: XDM has this video's playlist from the page
 MSG_ASK_SCHEDULE=Do you want to schedule this download?
 MSG_INVALID_URL=Download address is invalid or unsupported
 MSG_NO_URL=URL is empty

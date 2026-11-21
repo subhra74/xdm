@@ -84,5 +84,35 @@ class ManifestBodyMessageTest {
         waitFor("durations") { tracker.videoList.all { tracker.getDisplayInfo(it.id)?.duration == 6L } }
         assertEquals(4, tracker.videoList.size, "the variant and the audio are not listed on their own")
         assertTrue(tracker.videoList.all { tracker.getDisplayInfo(it.id)?.streamSize != null }, "sized from the variant")
+
+        // The download of the 720 entry gets the text of the playlists the player loaded, keyed by the entry's
+        // URLs (fragment and all); the variants it never loaded have none.
+        val hd = tracker.videoList.first { tracker.getDisplayInfo(it.id)?.height == 592 }
+        val task = tracker.getHlsVideo(hd.id)!!
+        val texts = VideoHelper.capturedPlaylists("41", listOfNotNull(task.url, task.audioUrl))
+        assertEquals(setOf(task.url, task.audioUrl), texts.keys, "video and audio playlist text")
+        assertEquals(vod, String(texts.getValue(task.url), Charsets.UTF_8), "as the player received it")
+        val sd = tracker.getHlsVideo(tracker.videoList.first { tracker.getDisplayInfo(it.id)?.height == 240 }.id)!!
+        assertTrue(VideoHelper.capturedPlaylists("41", listOf(sd.url)).isEmpty(), "never loaded: fetched as before")
+
+        // The popup's tick: only the entry whose video and audio playlists both came with their text.
+        val ticked = tracker.videoList.filter { it.playlistCaptured }.map { tracker.getDisplayInfo(it.id)?.height }
+        assertEquals(listOf(592), ticked, "the 720 entry the player loaded; 1080 shares its audio but not its video")
+    }
+
+    @Test
+    fun mediaPlaylist_taskGetsAcceptAsUsual_andKeepsTheBrowsersHeaderNames() {
+        val url = "https://vod.invalid/one/index.m3u8?h=t"
+        val msg = json.decodeFromString<ExtensionMessage>(
+            """
+            {"url":"$url","tabId":"42","tabUrl":"https://site.example/v","method":"GET",
+             "requestHeaders":{"sec-ch-ua-platform":["\"macOS\""],"User-Agent":["Mozilla/5.0"],"Referer":["https://site.example/"]},
+             "responseHeaders":{"content-type":["application/vnd.apple.mpegurl"]}}
+            """
+        )
+        VideoHelper.processMediaMessage(msg, vod)
+        waitFor("the media playlist entry") { tracker.videoList.isNotEmpty() }
+        val names = tracker.getHlsVideo(tracker.videoList.single().id)!!.headers!!.keys
+        assertEquals(listOf("sec-ch-ua-platform", "User-Agent", "Referer", "Accept"), names.toList(), "browser's names as sent, XDM's Accept in its usual case")
     }
 }

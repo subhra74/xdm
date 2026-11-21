@@ -132,6 +132,13 @@ class VideoPopup {
             if (item.subtitle) {
                 row.querySelector('.thumb').classList.add('subtitle');
             }
+            // XDM has this stream's playlist text from the page: it downloads even where the site
+            // allows the playlist link only once. A tick on the thumbnail (CSS, so a preview keeps it).
+            if (item.playlistCaptured) {
+                const thumb = row.querySelector('.thumb');
+                thumb.classList.add('captured');
+                thumb.title = item.playlistHint || "";
+            }
             // XDM's translated "Subtitle" (or another kind), before the format badge.
             if (item.badge) {
                 const kind = row.querySelector('.kind-badge');

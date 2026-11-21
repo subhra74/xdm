@@ -189,6 +189,13 @@ data class HlsDownloadTaskInfo(
      * formats are remuxed as usual. False: remux into MP4 (MKV when WebM is involved).
      */
     var keepOriginalFormat: Boolean = false,
+    /**
+     * Media playlist text the browser sent with the capture, by playlist URL ([url], [audioUrl], the
+     * subtitle's). In memory only, never in `.info`: the download manager writes it to `<id>.playlists`
+     * ([xdm.core.downloaders.web.streaming.downloader.hls.HlsPlaylistStore]) when the download is added,
+     * and the download reads it there instead of fetching a link that may work only once.
+     */
+    val playlistTexts: Map<String, ByteArray> = emptyMap(),
 ) : StreamingDownloadTaskInfo(
     id,
     fileName,

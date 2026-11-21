@@ -438,6 +438,8 @@ object BrowserIntegration {
                     previewable = it.previewable,
                     subtitle = it.subtitle,
                     badge = if (it.subtitle) I8N.text("ND_SUBTITLE_BADGE") else null,
+                    playlistCaptured = it.playlistCaptured,
+                    playlistHint = if (it.playlistCaptured) I8N.text("ND_PLAYLIST_CAPTURED_HINT") else null,
                 )
             },
         )
@@ -507,6 +509,13 @@ data class VideoItem(
      * null for none. Sent from here because the extension has no translations of its own.
      */
     val badge: String? = null,
+    /**
+     * XDM has the text of this HLS stream's playlists from the page, so it downloads even where the site
+     * allows the playlist link only once: the popup shows a tick on the thumbnail.
+     */
+    val playlistCaptured: Boolean = false,
+    /** The tick's translated hover text; null when there is no tick. */
+    val playlistHint: String? = null,
 )
 
 /** Body of a `/preview` request: the captured video, by its [VideoItem.id]. */
