@@ -21,7 +21,8 @@ import javax.swing.UIManager
  * mounted removable drives and `/`. FlatLaf's file chooser always has a shortcuts panel, empty there only
  * because the JDK's `FileSystemView` returns no shortcut files; [install] fills it through FlatLaf's
  * `FileChooser.shortcuts.*` hooks. The list is read each time a chooser is made, so a drive plugged in
- * shows up the next time. See private-docs/docs/linux-file-chooser.md.
+ * shows up the next time (on the BSDs the time after, see [currentRemovableMounts]). See
+ * private-docs/docs/linux-file-chooser.md.
  */
 internal object LinuxPlaces {
 
@@ -177,7 +178,8 @@ internal object LinuxPlaces {
         if (detectOS() != OS.BSD) {
             return removableMountsFor(false, user, false, { read(File("/proc/self/mountinfo")) }, { null })
         }
-        refreshMounts(user) // a drive plugged in shows up the next time the chooser opens
+        // This open shows the list from the previous refresh, so a drive plugged in shows up the second time.
+        refreshMounts(user)
         return bsdMounts
     }
 
