@@ -107,6 +107,16 @@ object VideoHelper {
     /** (tab id, manifest URL) -> when XDM last fetched it for that tab. */
     private val recentManifests = lruMap<Pair<String?, String>, Long>(MAX_TRACKED_URLS)
 
+    /** Media playlist text the browser sent with a capture, for the download to use instead of a fetch. */
+    private val playlistTexts = PlaylistTextCache()
+
+    /**
+     * The captured text of each of [urls] (media playlists of a stream found in tab [tabId]) that the
+     * browser sent, keyed by the URL as given. A download uses it when the playlist link works only once.
+     */
+    fun capturedPlaylists(tabId: String?, urls: Collection<String>): Map<String, ByteArray> =
+        playlistTexts.get(tabId, urls)
+
     /** Access-ordered map that drops its least recently used entry past [max]. */
     private fun <K, V> lruMap(max: Int): MutableMap<K, V> = Collections.synchronizedMap(
         object : LinkedHashMap<K, V>(16, 0.75f, true) {
@@ -223,7 +233,7 @@ object VideoHelper {
 
     /** Playlist requests carry an Accept header, as a browser's do; some CDNs refuse requests without one. */
     private fun withAccept(headers: HeaderMap): HeaderMap =
-        if (headers.keys.any { it.equals("accept", ignoreCase = true) }) headers else headers + ("ACCEPT" to listOf("*/*"))
+        if (headers.keys.any { it.equals("accept", ignoreCase = true) }) headers else headers + (ACCEPT to listOf("*/*"))
 
     /** Parses an MPD, resolving xlink remote elements (e.g. ad-insertion Periods) with the same headers and cookie. */
     private fun parseDash(
@@ -742,7 +752,7 @@ object VideoHelper {
         getHeader(REFERER, headers)?.let { referersToSkip[generate64BitHash(it)] = true }
         val acceptHeaderAdded = headers.keys.any { StringUtils.equalsIgnoreCase(it, "accept") }
         if (!acceptHeaderAdded) {
-            headers["ACCEPT"] = mutableListOf("*/*")
+            headers[ACCEPT] = mutableListOf("*/*")
         }
         val bytes = manifestBody?.toByteArray(Charsets.UTF_8) ?: ManifestUtils.downloadManifestBytes(
             httpClient, msg.url, headers, msg.cookie, AtomicBoolean(false)
@@ -841,7 +851,7 @@ object VideoHelper {
         getHeader(REFERER, headers)?.let { referersToSkip[generate64BitHash(it)] = true }
         val acceptHeaderAdded = headers.keys.any { StringUtils.equalsIgnoreCase(it, "accept") }
         if (!acceptHeaderAdded) {
-            headers["ACCEPT"] = mutableListOf("*/*")
+            headers[ACCEPT] = mutableListOf("*/*")
         }
         // Read whole, once: the old `Files.lines` iterators over a temp file were never closed, which
         // leaked a file handle per parse and, on Windows, blocked the delete.
@@ -902,6 +912,8 @@ object VideoHelper {
                 return
             }
             val tab = msg.tabId ?: "0"
+            // The text, for the download: the link may not give it a second time.
+            manifestBody?.let { playlistTexts.put(tab, msg.url, it) }
             val media = HlsMediaInfo.of(playlist)
             val mediaUrl = msg.url.toHttpUrlOrNull()?.toString() ?: msg.url
             recentHlsMedia[tab to mediaUrl] = media

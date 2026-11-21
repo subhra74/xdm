@@ -6,6 +6,7 @@ package xdm.manager
 
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import xdm.capture.CaptureContext
+import xdm.capture.VideoHelper
 import xdm.core.CoreConfig
 import xdm.core.downloaders.*
 import xdm.core.downloaders.web.batch.BatchDownloaderTask
@@ -21,6 +22,7 @@ import xdm.core.downloaders.web.saveState
 import xdm.core.downloaders.web.streaming.downloader.dash.DashDownloaderTask
 import xdm.core.downloaders.web.streaming.downloader.hls.HlsDownloaderTask
 import xdm.core.downloaders.web.streaming.downloader.hls.HlsKeyStore
+import xdm.core.downloaders.web.streaming.downloader.hls.HlsPlaylistStore
 import xdm.core.downloaders.web.streaming.manifest.dash.DashSegment
 import xdm.core.media.muxer.MuxContainer
 import xdm.core.media.muxer.Muxer
@@ -346,6 +348,8 @@ class DownloadManager(
                 // The working folder has served its purpose; leaving it behind would litter the
                 // temp folder with one empty directory per completed download.
                 deleteTempFolders(event.id)
+                // Only a start over needs the captured playlists, and a finished download has no use for them.
+                HlsPlaylistStore.delete(event.id, configDir)
                 // Before the record turns FINISHED, so nothing (the dialog, "Open", the virus scan,
                 // the custom command) can reach the file unmarked.
                 if (config.markDownloadedFiles) markDownloaded(event)
@@ -1043,6 +1047,7 @@ class DownloadManager(
         taskInfoDB.deleteRecord(id)
         listOf("$id.state", "$id.state.bak1", "$id.state.bak2").forEach { File(configDir, it).delete() }
         HlsKeyStore.delete(id, configDir)
+        HlsPlaylistStore.delete(id, configDir)
         TorrentService.deleteFiles(id, configDir)
         refused.remove(id)
         linkRefresher.forget(id)
@@ -1119,6 +1124,12 @@ class DownloadManager(
 
         // The tracker's entry lists every subtitle the stream has; the download keeps the picked one.
         tracker.getHlsVideo(videoId)?.let { source ->
+            // The media playlists' text the browser sent, if any (a Restart brings its own): some sites
+            // sign a playlist link for one request, which the page's player has already used.
+            val urls = listOfNotNull(source.url, source.audioUrl, subtitle?.playlistUrl)
+            val texts = source.playlistTexts.filterKeys { it in urls }.ifEmpty {
+                VideoHelper.capturedPlaylists(tracker.getDisplayInfo(videoId)?.tabId, urls)
+            }
             return startHlsDownload(
                 source.copy(
                     id = CoreUtils.uniqueId(), fileName = fileName, categoryId = categoryId,
@@ -1126,6 +1137,7 @@ class DownloadManager(
                     maxPiece = maxPiece ?: source.maxPiece,
                     subtitles = listOfNotNull(subtitle),
                     keepOriginalFormat = keepOriginalFormat,
+                    playlistTexts = texts,
                 )
             )
         }
@@ -1149,6 +1161,11 @@ class DownloadManager(
     }
 
     private fun startHls(task: HlsDownloadTaskInfo): Long {
+        if (task.playlistTexts.isNotEmpty()) {
+            // Not fatal: without it the download fetches the playlists, as one without captured text does.
+            HlsPlaylistStore.save(task.id, configDir, task.playlistTexts)
+                .onFailure { Logger.error("XDM", "Unable to save the captured playlists of ${task.id}", it) }
+        }
         taskInfoDB.saveHlsTask(task)
         store.add(
             DbRecord(

@@ -23,4 +23,5 @@ open module xdm.app {
     exports xdm.app;
 
     uses com.formdev.flatlaf.FlatDefaultsAddon;
+    uses javax.accessibility.AccessibilityProvider;
 }

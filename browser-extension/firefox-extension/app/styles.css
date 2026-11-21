@@ -147,6 +147,7 @@ body {
 /* Thumbnail stand-in for the capture. Sized to the two-line row rather than to the text, so the
    list reads as media rather than as a row of tiny icons; 16:9, the same box a preview fills. */
 .thumb {
+    position: relative;
     flex: none;
     display: flex;
     align-items: center;
@@ -205,6 +206,21 @@ body {
 .video-item:focus-visible .cc-badge {
     background: var(--accent);
     transform: scale(1.08);
+}
+
+/* XDM has the stream's playlist text from the page: a tick in the corner. A pseudo-element, so a
+   preview replacing the thumbnail's content keeps it. */
+.thumb.captured::after {
+    content: "";
+    position: absolute;
+    right: 2px;
+    bottom: 2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--ok-border) center / 10px 10px no-repeat
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M2 5.2 4.1 7.2 8 3' fill='none' stroke='white' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    box-shadow: 0 0 0 1.5px var(--bg);
 }
 
 /* The video's first frame in place of the icon. */

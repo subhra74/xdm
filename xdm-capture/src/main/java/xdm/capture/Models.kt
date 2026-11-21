@@ -17,6 +17,11 @@ data class DetectedVideoInfo(
     val previewable: Boolean = false,
     /** A subtitle file ([CapturedSubtitle]), not a video. */
     val subtitle: Boolean = false,
+    /**
+     * An HLS stream whose media playlists' text XDM has from the page (video and separate audio), so it
+     * downloads even where the site allows the playlist link only once ([VideoHelper.capturedPlaylists]).
+     */
+    val playlistCaptured: Boolean = false,
 )
 
 data class StreamingVideoDisplayInfo(

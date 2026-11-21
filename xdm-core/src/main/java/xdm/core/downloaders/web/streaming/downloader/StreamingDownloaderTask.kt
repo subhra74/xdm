@@ -35,6 +35,7 @@ import xdm.core.media.muxer.OutputKind
 import xdm.core.media.muxer.SegmentInfo
 import xdm.core.media.muxer.impl.SegmentProbe
 import java.io.IOException
+import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ExecutorService
@@ -661,20 +662,41 @@ abstract class StreamingDownloaderTask(
      * is not read here: a media playlist can list a very large number of segments, so the caller streams
      * it (see [readManifestLines]) and must call [discardManifest] when done. A file that arrives after
      * the caller has discarded [manifestFile] (it stopped waiting) is deleted here instead.
+     *
+     * [saved] is the playlist's text as the browser received it, when it was captured with it. A finished
+     * playlist (`#EXT-X-ENDLIST`) is taken from it without a fetch: the link may work only once. A live
+     * or growing one is fetched for its current state, and the saved text is used only if that fails.
      */
     protected fun loadManifest(
-        url: String, manifestFile: AtomicReference<File?>, latch: CountDownLatch, error: AtomicBoolean
+        url: String, manifestFile: AtomicReference<File?>, latch: CountDownLatch, error: AtomicBoolean,
+        saved: ByteArray? = null,
     ) {
+        if (saved != null && isFinishedPlaylist(saved)) {
+            try {
+                Logger.info("XDM", "Playlist from the capture, not fetched: $url")
+                handOver(writeManifestFile(saved), manifestFile)
+            } catch (ex: IOException) {
+                Logger.error("XDM", "Error writing the captured playlist", ex)
+                error.set(true)
+            } finally {
+                latch.countDown()
+            }
+            return
+        }
         executorService.submit {
             try {
-                fetchWithRetry("Playlist") { onErrorResponse, onError ->
+                val path = fetchWithRetry("Playlist") { onErrorResponse, onError ->
                     downloadManifestAsFile(
                         context.httpClient, url, context.headers, context.cookie, context.stopFlag, onError,
                         onErrorResponse = onErrorResponse,
                     )
-                }?.let { path ->
-                    val file = File(path)
-                    if (!manifestFile.compareAndSet(null, file)) deleteManifestFile(file)
+                }
+                when {
+                    path != null -> handOver(File(path), manifestFile)
+                    saved != null && !context.stopFlag.get() -> {
+                        Logger.info("XDM", "Playlist fetch failed, using the text from the capture: $url")
+                        handOver(writeManifestFile(saved), manifestFile)
+                    }
                 }
             } catch (ex: Exception) {
                 Logger.error("XDM", "Error downloading manifest", ex)
@@ -684,6 +706,26 @@ abstract class StreamingDownloaderTask(
             }
         }
     }
+
+    private fun handOver(file: File, manifestFile: AtomicReference<File?>) {
+        if (!manifestFile.compareAndSet(null, file)) deleteManifestFile(file)
+    }
+
+    /** [text] in a temp file, as [downloadManifestAsFile] leaves a fetched playlist. */
+    private fun writeManifestFile(text: ByteArray): File {
+        val file = File.createTempFile(UUID.randomUUID().toString(), ".m3u8")
+        try {
+            file.writeBytes(text)
+        } catch (ex: IOException) {
+            file.delete()
+            throw ex
+        }
+        return file
+    }
+
+    /** Whether the playlist [text] is complete (`#EXT-X-ENDLIST`): a video on demand, not a live stream. */
+    private fun isFinishedPlaylist(text: ByteArray): Boolean =
+        String(text, Charsets.UTF_8).lineSequence().any { it.trim() == "#EXT-X-ENDLIST" }
 
     /** Runs [block] over the lines of the manifest in [manifestFile], streaming and closing the file. */
     protected fun <T> readManifestLines(manifestFile: AtomicReference<File?>, block: (Iterator<String>) -> T): T {

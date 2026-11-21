@@ -111,12 +111,14 @@ class HlsDownloaderTask : StreamingDownloaderTask {
         val audioManifest = AtomicReference<File?>()
         val subtitleManifest = AtomicReference<File?>()
         val error = AtomicBoolean(false)
-        loadManifest(hlsContext.url, videoManifest, latch, error)
+        // The playlists' text as the browser received them, when captured with it: the links may work only once.
+        val saved = HlsPlaylistStore.load(context.id, configDir)
+        loadManifest(hlsContext.url, videoManifest, latch, error, saved[hlsContext.url])
         if (context.hasSeparateStreams) {
-            loadManifest(hlsContext.audioUrl!!, audioManifest, latch, error)
+            loadManifest(hlsContext.audioUrl!!, audioManifest, latch, error, saved[hlsContext.audioUrl!!])
         }
         // Its own error flag: a subtitle that can't be fetched only goes missing.
-        subtitleUrl?.let { loadManifest(it, subtitleManifest, latch, AtomicBoolean(false)) }
+        subtitleUrl?.let { loadManifest(it, subtitleManifest, latch, AtomicBoolean(false), saved[it]) }
         try {
             if (!awaitUnlessStopped(latch)) return null
             val (videoPlaylist, audioPlaylist) = parseManifest(videoManifest, audioManifest)

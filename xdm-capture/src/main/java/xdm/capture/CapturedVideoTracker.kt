@@ -159,7 +159,8 @@ class CapturedVideoTracker : ICapturedVideoTracker {
                         name = t.fileName,
                         description = s.descriptionText,
                         date = s.dateTime,
-                        tabId = s.tabId
+                        tabId = s.tabId,
+                        playlistCaptured = hasPlaylistText(t, s.tabId),
                     )
                 })
                 list.addAll(httpVideoList.values.map { (t, s) ->
@@ -316,6 +317,17 @@ class CapturedVideoTracker : ICapturedVideoTracker {
 
 /** Most subtitle files kept per tab: a page with every language of every episode stays usable. */
 const val MAX_SUBTITLES_PER_TAB = 30
+
+/**
+ * Whether the text of every media playlist [task] needs (video, and the separate audio) is at hand: carried
+ * by the entry (a Restart) or captured from the page. Asked each time the list is built, since the player
+ * may load a variant after its master was listed, and the capture cache may drop it later.
+ */
+private fun hasPlaylistText(task: HlsDownloadTaskInfo, tabId: String?): Boolean {
+    val urls = listOfNotNull(task.url, task.audioUrl)
+    if (urls.all { it in task.playlistTexts }) return true
+    return VideoHelper.capturedPlaylists(tabId, urls).size == urls.size
+}
 
 private val previewableExts = listOf("mp4", "m4v", "mov")
 
