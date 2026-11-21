@@ -207,7 +207,8 @@ $JavaOptions = @(
   '-Djdk.nio.maxCachedBufferSize=262144', '-XX:+DisplayVMOutputToStderr', '--enable-native-access=xdm.app',
   '-XX:+UseCompactObjectHeaders', '-XX:TieredStopAtLevel=1', '-XX:CICompilerCount=1'
 )
-$Modules = 'java.desktop,java.logging,jdk.crypto.ec,jdk.unsupported'
+# Same list as build-bundle.ps1 (jdk.accessibility: the Java Access Bridge).
+$Modules = 'java.desktop,java.logging,jdk.crypto.ec,jdk.unsupported,jdk.accessibility'
 $AppModule = 'xdm.app'
 $FlatLafDll = 'flatlaf-windows-x86_64.dll'
 $ConscryptDll = 'conscrypt_openjdk_jni-windows-x86_64.dll'

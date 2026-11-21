@@ -71,7 +71,10 @@ Set-Location $ProjectRoot
 
 # JDK modules the app actually needs - see the comment block in build-bundle.sh
 # for how this list was derived and what was deliberately left out.
-$Modules = 'java.desktop,java.logging,jdk.crypto.ec,jdk.unsupported'
+# jdk.accessibility (Windows only): the Java Access Bridge, which screen readers use. Once enabled
+# (jabswitch -enable, a screen reader's setup, an older Java install) it is named in
+# %USERPROFILE%\.accessibility.properties, and a runtime without it can't start AWT (issue 1456).
+$Modules = 'java.desktop,java.logging,jdk.crypto.ec,jdk.unsupported,jdk.accessibility'
 if ($WithLocales) { $Modules += ',jdk.localedata' }
 
 # JVM tuning flags baked into the launcher. See the comment block in

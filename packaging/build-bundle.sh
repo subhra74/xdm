@@ -28,6 +28,8 @@ cd "$PROJECT_ROOT"
 # jdk.localedata alone adds ~15 MB; pass --with-locales if you need non-English
 # date/number formatting (UI translations come from the app's own bundles and
 # do NOT need it).
+# jdk.accessibility is linked on Windows only (build-bundle.ps1): it holds the Java
+# Access Bridge there. On macOS and Linux it has no assistive technology in it.
 # --------------------------------------------------------------------------
 MODULES="java.desktop,java.logging,jdk.crypto.ec,jdk.unsupported"
 
