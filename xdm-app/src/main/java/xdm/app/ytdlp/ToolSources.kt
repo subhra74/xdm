@@ -37,6 +37,7 @@ data class ToolSource(
 
 /**
  * The official release each tool is downloaded from (docs: `private-docs/docs/ytdlp-download.md` §3.2).
+ * Null where the project publishes no build (the BSDs).
  */
 object ToolSources {
     fun of(tool: ExternalTool, os: OS, arch: Arch): ToolSource? = when (tool) {
@@ -47,6 +48,8 @@ object ToolSources {
                 // Universal: one binary for both processors.
                 OS.MacOS -> "yt-dlp_macos"
                 OS.Linux -> if (arch == Arch.ARM64) "yt-dlp_linux_aarch64" else "yt-dlp_linux"
+                // No official build: the system's own copy (e.g. `pkg install yt-dlp`) is found on PATH.
+                OS.BSD -> return null
             },
             checksumAsset = "SHA2-256SUMS",
         )
@@ -56,6 +59,7 @@ object ToolSources {
                 OS.Windows -> "pc-windows-msvc"
                 OS.MacOS -> "apple-darwin"
                 OS.Linux -> "unknown-linux-gnu"
+                OS.BSD -> return null
             }
             val cpu = if (arch == Arch.ARM64) "aarch64" else "x86_64"
             ToolSource(
