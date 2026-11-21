@@ -31,3 +31,5 @@ experiments
 xdm-android/.gradle/
 xdm-android/.kotlin/
 xdm-android/local.properties
+# Native libraries (libxdmtorrent.so) are fetched or copied in, never committed
+xdm-android/app/src/main/jniLibs/
