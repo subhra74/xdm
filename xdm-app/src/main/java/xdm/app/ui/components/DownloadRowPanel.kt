@@ -331,7 +331,8 @@ class DownloadRowPanel(val root: JPanel = JPanel()) {
         tileHue = AppTheme.tileHue(categoryById(ent.categoryId))
         val tile = AppTheme.tile(tileHue)
         iconBadge.background = tile.background
-        icon.icon = tileIcon(CategoryStyle.glyphForFile(ent.fileName), tile.glyph)
+        // The file's own Windows icon when it is available, else the file type's glyph.
+        icon.icon = SystemFileIcons.iconFor(ent) ?: tileIcon(CategoryStyle.glyphForFile(ent.fileName), tile.glyph)
     }
 
     fun tileIcon(glyph: RemixIcon, color: Color): Icon =
