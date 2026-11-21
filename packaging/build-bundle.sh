@@ -305,6 +305,13 @@ case "$OS-$(sed -n 's/^OS_ARCH="\(.*\)"/\1/p' "$JDK_HOME_DIR/release" 2>/dev/nul
     JAVA_OPTIONS+=(-XX:CICompilerCount=2)
     echo ">> JIT: C1, C2 for the JDK's crypto (no Conscrypt on this target)" ;;
 esac
+# CVE-2026-114938: the JIT's Base64 decode stub can write past its buffer on x86-64 with AVX-512 VBMI.
+# The pinned JBR predates the fix (25.0.5.1), so its bundles turn the stub off and decode in plain Java.
+# Also on the Mac's JBR recording run, so the recorded flags match the Linux launcher's. Drop it once
+# jdk.properties pins a fixed JBR.
+if [[ "$OS" == "linux" || $JBR_RECORDING -eq 1 ]]; then
+  JAVA_OPTIONS+=(-XX:-UseBASE64Intrinsics)
+fi
 
 # ---- app jar --------------------------------------------------------------
 if [[ $SKIP_MAVEN -eq 0 ]]; then
