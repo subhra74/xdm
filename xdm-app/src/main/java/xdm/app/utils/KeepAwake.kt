@@ -23,6 +23,8 @@ import java.util.concurrent.TimeUnit
  *             on a deb/rpm install. Without a portal (a bare window manager):
  *             `systemd-inhibit --what=idle:sleep --mode=block cat` - a logind inhibitor lock held
  *             for the lifetime of the blocking `cat`.
+ *  - BSD:     the portal's Inhibit as on Linux, when the desktop runs a portal (tried once per run);
+ *             otherwise nothing, as there is no `systemd-inhibit`.
  *
  * Whichever mechanism is used, it is released when XDM exits even if it exits badly: the OS drops
  * a thread's execution state when the process dies, the portal drops an inhibitor when our bus
@@ -36,6 +38,8 @@ object KeepAwake {
     private var inhibitor: WindowsInhibitor? = null
     private var portalHandle: String? = null
     private val os = detectOS()
+    /** BSD only: the portal failed once, so it is not asked (and the failure logged) again on every download. */
+    private var noPortal = false
 
     /** Ensure the sleep inhibitor is active. Safe to call repeatedly. */
     fun acquire() {
@@ -52,12 +56,14 @@ object KeepAwake {
                 return
             }
             if (portalHandle != null || process?.isAlive == true) return
-            if (os == OS.Linux) {
+            if (os.isXdg && !noPortal) {
                 portalHandle = PortalInhibit.inhibit("Download in progress")
                 if (portalHandle != null) {
                     Logger.info("KeepAwake: sleep inhibitor acquired (portal)")
                     return
                 }
+                // Many BSD desktops run no portal; Linux keeps trying each time as before.
+                if (os == OS.BSD) noPortal = true
             }
             process = try {
                 startInhibitor()
@@ -90,7 +96,8 @@ object KeepAwake {
         }
     }
 
-    private fun startInhibitor(): Process {
+    /** The helper that holds the lock, or null where there is none (the BSDs): not a failure to log on every download. */
+    private fun startInhibitor(): Process? {
         val command = when (os) {
             OS.MacOS -> listOf("caffeinate", "-i", "-w", ProcessHandle.current().pid().toString())
             OS.Linux -> listOf(
@@ -102,6 +109,7 @@ object KeepAwake {
                 "cat"
             )
             OS.Windows -> throw IllegalStateException("Windows uses WindowsInhibitor")
+            OS.BSD -> return null
         }
         return ProcessBuilder(command)
             .redirectOutput(ProcessBuilder.Redirect.DISCARD)

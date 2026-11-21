@@ -21,7 +21,11 @@ data class AppConfigData(
 enum class OS {
     Windows,
     Linux,
-    MacOS
+    MacOS,
+    BSD;
+
+    /** Linux and the BSDs share the XDG desktop code paths: D-Bus services, portals, xdg-open. */
+    val isXdg: Boolean get() = this == Linux || this == BSD
 }
 
 enum class MessageBoxResult {

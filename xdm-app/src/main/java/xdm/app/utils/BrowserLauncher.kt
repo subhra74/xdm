@@ -60,7 +60,7 @@ enum class Browser(
  * extension store. Every platform asks the OS where the browser is first and only then guesses paths:
  * - macOS: LaunchServices by bundle id (`open -b`), which finds the app wherever it is installed.
  * - Windows: `ShellExecuteExW` on the bare exe name, resolved through `App Paths`.
- * - Linux: `PATH` and the usual bin folders, vendor `/opt` installs, then Flatpak exports.
+ * - Linux and BSD: `PATH` and the usual bin folders, vendor `/opt` installs, then Flatpak exports.
  *
  * Blocking (it may wait on `open`), so call it off the EDT.
  */

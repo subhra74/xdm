@@ -44,6 +44,12 @@ class AppDirsTest {
     }
 
     @Test
+    fun bsdUsesXdgDataHome() {
+        assertEquals(File(home, ".local/share/xdm-app"), resolve(OS.BSD))
+        assertEquals(File("/data/u", "xdm-app"), resolve(OS.BSD, null, "XDG_DATA_HOME" to "/data/u"))
+    }
+
+    @Test
     fun propertyOverridesEveryOs() {
         OS.entries.forEach {
             assertEquals(File("/tmp/rec/xdm-app").absoluteFile, resolve(it, "/tmp/rec/xdm-app", "LOCALAPPDATA" to "x"), "$it")

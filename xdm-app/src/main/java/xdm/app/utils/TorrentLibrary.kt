@@ -1,5 +1,6 @@
 package xdm.app.utils
 
+import xdm.app.OS
 import xdm.core.util.Logger
 import xdm.manager.torrent.NativeTorrent
 import java.io.File
@@ -15,17 +16,31 @@ object TorrentLibrary {
     const val PROPERTY = "xdm.torrent.library"
 
     /** `windows-x64`, `macos-arm64`, `linux-x64`, ... as the build scripts name their output folders. */
-    val platform: String by lazy {
-        val os = System.getProperty("os.name").lowercase()
-        val arch = System.getProperty("os.arch").lowercase()
+    val platform: String by lazy { platformFor(System.getProperty("os.name"), System.getProperty("os.arch")) }
+
+    /**
+     * The BSDs get their own name (`freebsd-x64`, `openbsd-x64`, ...): there is no build for them yet, and a
+     * Linux library cannot load there.
+     */
+    fun platformFor(osName: String, osArch: String): String {
+        val os = osName.lowercase()
+        val arch = osArch.lowercase()
         val o = when {
             os.startsWith("windows") -> "windows"
             os.contains("mac") || os.contains("darwin") -> "macos"
+            detectOS(osName) == OS.BSD -> os.filter { it.isLetterOrDigit() }
             else -> "linux"
         }
         val a = if (arch == "aarch64" || arch == "arm64") "arm64" else "x64"
-        "$o-$a"
+        return "$o-$a"
     }
+
+    /**
+     * Whether to show torrent downloads at all (the New menu item, the BitTorrent settings page), decided
+     * without loading the library. Always on the platforms XDM ships builds for, where a missing library
+     * is a broken install and Add torrent says so. On the BSDs only when a library has been put in place.
+     */
+    val offered: Boolean by lazy { detectOS() != OS.BSD || candidates().any { it.isFile } }
 
     val fileName: String
         get() = when {
