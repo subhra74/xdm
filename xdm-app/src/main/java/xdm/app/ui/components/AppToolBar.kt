@@ -8,6 +8,7 @@ import xdm.app.ui.screens.SettingsWindow
 import xdm.app.utils.RemixIcon
 import xdm.app.update.UpdateChecker
 import xdm.app.utils.SingleWindows
+import xdm.app.utils.TorrentLibrary
 import xdm.app.utils.UPDATE_CHECK_PAGE_URL
 import xdm.app.utils.WEBSITE_HELP_URL
 import xdm.app.utils.WEBSITE_URL
@@ -163,7 +164,7 @@ class AppToolBar(
         })
         item("NEW_HTTP_DOWNLOAD") { AppContext.app.addDownload(null) }
         item("NEW_VIDEO_DOWNLOAD") { AppMenuHandler.showVideoDialog(window()) }
-        item("NEW_TORRENT_DOWNLOAD") { AppMenuHandler.showTorrentDialog(window()) }
+        if (TorrentLibrary.offered) item("NEW_TORRENT_DOWNLOAD") { AppMenuHandler.showTorrentDialog(window()) }
         item("MENU_STREAM_DOWNLOAD") { AppMenuHandler.showStreamDialog(window()) }
         item("MENU_BATCH_DOWNLOAD") { AppMenuHandler.showBatchDialog(window()) }
         return ctx

@@ -17,6 +17,7 @@ import xdm.app.ui.screens.settings.settingsSurface
 import xdm.app.utils.RemixIcon
 import xdm.app.utils.ScaledEmptyBorder
 import xdm.app.utils.SingleWindows
+import xdm.app.utils.TorrentLibrary
 import xdm.app.utils.createIcon
 import xdm.app.utils.px
 import xdm.app.utils.scaledSize
@@ -74,13 +75,14 @@ class SettingsWindow : JFrame() {
     private val torrentPanel = xdm.app.ui.screens.settings.TorrentPanel()
     private val advancedConfigPanel = AdvancedConfigPanel()
 
-    private val pages = listOf(
+    // No BitTorrent page where torrents are not offered (the BSDs); its panel still loads and saves, unseen.
+    private val pages = listOfNotNull(
         Page("SETTINGS_GENERAL", RemixIcon.SETTINGS_4_LINE, generalPanel),
         Page("SETTINGS_DOWNLOADS", RemixIcon.DOWNLOAD_2_LINE, downloadsPanel),
         Page("SETTINGS_FOLDERS", RemixIcon.FOLDER_3_LINE, foldersPanel),
         Page("SETTINGS_MONITORING", RemixIcon.PUZZLE_LINE, browserMonitorPanel),
         Page("SETTINGS_NETWORK", RemixIcon.WIFI_LINE, networkConfigPanel),
-        Page("SETTINGS_BITTORRENT", RemixIcon.ARROW_UP_DOWN_FILL, torrentPanel),
+        Page("SETTINGS_BITTORRENT", RemixIcon.ARROW_UP_DOWN_FILL, torrentPanel).takeIf { TorrentLibrary.offered },
         Page("MSG_ADV_TITLE", RemixIcon.TERMINAL_BOX_LINE, advancedConfigPanel),
     )
 
