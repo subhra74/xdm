@@ -368,7 +368,16 @@ jobs:
             fi
           fi
           shopt -s nullglob
-          files=(dist/*.dmg dist/*.msi dist/*.deb dist/*.rpm dist/*.pkg.tar.zst dist/*.tar.gz dist/*.flatpak)
+          # Table order: Windows, Linux (Flatpak first), macOS. x64 before ARM in each format, except macOS: Apple
+          # Silicon first. xdmsetup-<v>.msi (the XDM 8 copy) ends the Windows rows.
+          files=()
+          for group in 'xdm-*.msi' 'xdmsetup-*.msi' '*.flatpak' '*.deb' '*.rpm' '*.pkg.tar.zst' '*.tar.gz' '*.dmg'; do
+            x64=(); arm=()
+            for f in dist/$group; do
+              if [[ "$f" == *arm64* || "$f" == *aarch64* ]]; then arm+=("$f"); else x64+=("$f"); fi
+            done
+            if [[ "$group" == '*.dmg' ]]; then files+=("${arm[@]}" "${x64[@]}"); else files+=("${x64[@]}" "${arm[@]}"); fi
+          done
           ls -l "${files[@]}"
           # Download table: one row per installer actually built (a failed macOS job just has no rows).
           # Names: xdm-<v>-<x64|arm64>.msi (and xdmsetup-<v>.msi, a copy of x64), XDM-<v>-<x64|arm64>.dmg,
