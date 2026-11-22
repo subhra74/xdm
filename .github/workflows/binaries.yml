@@ -277,7 +277,7 @@ jobs:
       - name: Build packages
         run: packaging/build-linux.sh -s --arch ${{ matrix.arch }}
 
-      # The deb, rpm and Arch packages are made from the same image as the tar.gz.
+      # The deb, rpm, Arch package and .flatpak are made from the same image as the tar.gz.
       - name: Check torrent library in tar.gz
         run: |
           shopt -s nullglob
@@ -308,6 +308,12 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           path: build/linux-${{ matrix.arch }}/*.tar.gz
+          archive: false
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v7
+        with:
+          path: build/linux-${{ matrix.arch }}/*.flatpak
           archive: false
           if-no-files-found: error
 
@@ -362,11 +368,20 @@ jobs:
             fi
           fi
           shopt -s nullglob
-          files=(dist/*.dmg dist/*.msi dist/*.deb dist/*.rpm dist/*.pkg.tar.zst dist/*.tar.gz)
+          # Table order: Windows, Linux (Flatpak first), macOS. x64 before ARM in each format, except macOS: Apple
+          # Silicon first. xdmsetup-<v>.msi (the XDM 8 copy) ends the Windows rows.
+          files=()
+          for group in 'xdm-*.msi' 'xdmsetup-*.msi' '*.flatpak' '*.deb' '*.rpm' '*.pkg.tar.zst' '*.tar.gz' '*.dmg'; do
+            x64=(); arm=()
+            for f in dist/$group; do
+              if [[ "$f" == *arm64* || "$f" == *aarch64* ]]; then arm+=("$f"); else x64+=("$f"); fi
+            done
+            if [[ "$group" == '*.dmg' ]]; then files+=("${arm[@]}" "${x64[@]}"); else files+=("${x64[@]}" "${arm[@]}"); fi
+          done
           ls -l "${files[@]}"
           # Download table: one row per installer actually built (a failed macOS job just has no rows).
           # Names: xdm-<v>-<x64|arm64>.msi (and xdmsetup-<v>.msi, a copy of x64), XDM-<v>-<x64|arm64>.dmg,
-          # nfpm's amd64/x86_64 or arm64/aarch64 for deb/rpm/Arch, xdm-app-<v>-linux-<x64|arm64>.tar.gz.
+          # nfpm's amd64/x86_64 or arm64/aarch64 for deb/rpm/Arch, xdm-app-<v>-linux-<x64|arm64>.tar.gz and .flatpak.
           base="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/download/$tag"
           {
             echo "## Downloads"
@@ -384,6 +399,7 @@ jobs:
                 *.rpm)        note="For Fedora / RHEL / openSUSE $cpu" ;;
                 *.pkg.tar.zst) note="For Arch Linux / Manjaro $cpu" ;;
                 *.tar.gz)     note="For any Linux $cpu (portable, no install)" ;;
+                *.flatpak)    note="For any Linux $cpu (Flatpak bundle; runtime installs from Flathub)" ;;
                 *)            note="" ;;
               esac
               echo "| [$name]($base/$name) | $note |"
