@@ -4,6 +4,7 @@ import xdm.app.torrent.TorrentClients
 import xdm.app.update.UpdateChecker
 
 import xdm.app.ui.components.SortKey
+import xdm.app.utils.DownloadsFolder
 import xdm.capture.MediaFilter
 import xdm.core.CoreConfig
 import xdm.core.util.AtomicIO
@@ -391,7 +392,8 @@ class AppConfig(private val configDir: String) : IAppConfig {
     override var runVirusScan: Boolean = false
     override var runCommand: Boolean = false
     override var showDownloadProgressWindow: Boolean = true
-    override var defaultDownloadFolder: String = File(System.getProperty("user.home"), "Downloads").absolutePath
+    // Only a first-run value: a saved config replaces it, and existing configs are left as they are.
+    override var defaultDownloadFolder: String = DownloadsFolder.resolve()
         set(value) {
             if (field == value) return
             field = value

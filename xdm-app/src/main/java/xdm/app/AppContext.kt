@@ -39,8 +39,6 @@ object AppContext {
         set(value) {
             CaptureContext.tracker = value
         }
-    lateinit var defaultDownloadFolder: String
-
     /** The startup temp directory; [IAppConfig.tempFolder] defaults to it and may override it. */
     lateinit var tempDir: String
     lateinit var taskInfoDB: TaskInfoDB
@@ -63,8 +61,6 @@ object AppContext {
     fun init(args: Array<String>, configDir: String, tempDir: String) {
         this.configDir = configDir
         this.tempDir = tempDir
-        val f = File(System.getProperty("user.home"), "Downloads")
-        defaultDownloadFolder = if (f.exists()) f.absolutePath else System.getProperty("user.home")
 
         if (::db.isInitialized
             && ::app.isInitialized
