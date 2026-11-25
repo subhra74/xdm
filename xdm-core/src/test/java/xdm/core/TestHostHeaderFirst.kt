@@ -92,8 +92,10 @@ class TestHostHeaderFirst {
         val client = HttpClientImpl(1).also { clients.add(it) }
         val headers = linkedMapOf("Host" to listOf("master.example")) + browserHeaders
         assertEquals(200, client.getResponse("http://127.0.0.1:${s.port}/v.m3u8", headers, null, null).getOrThrow().use { it.statusCode }, "status")
-        val hosts = s.requests.single().filter { it.startsWith("Host:", ignoreCase = true) }
+        val head = s.requests.single()
+        val hosts = head.filter { it.startsWith("Host:", ignoreCase = true) }
         assertEquals(listOf("Host: 127.0.0.1:${s.port}"), hosts, "only the URL's own Host")
+        assertEquals("Host: 127.0.0.1:${s.port}", head[1], "Host right after the request line")
     }
 
     @Test
