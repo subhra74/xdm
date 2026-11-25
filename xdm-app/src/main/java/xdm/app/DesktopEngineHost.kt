@@ -63,7 +63,7 @@ object DesktopUiSink : UiSink {
     }
 
     /**
-     * The session ended (finished, paused or stopped); the user's Hide goes to the app directly and keeps them.
+     * The session ended (finished, paused or stopped); closing the window (or Cancel) goes to the app directly and keeps them.
      * A window paused by its own Pause button stays open with Resume ([IAppInstance.progressSessionEnded]).
      */
     override fun hideProgress(id: Long) {

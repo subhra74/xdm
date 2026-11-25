@@ -48,7 +48,7 @@ import javax.swing.table.DefaultTableCellRenderer
  *          Download 46%            68.9 MB / 150.0 MB
  *          ▮▮▮▮▯▮▮▯▯▮▯▯   (segments)
  *          Speed 4.2 MB/s                 19 sec left
- * [Less]                        [Hide] [Cancel] [Pause]
+ * [Less]                               [Cancel] [Pause]
  *  #  Status        Downloaded     (a row per connection, numbered 1..n)
  * ```
  *
@@ -110,7 +110,6 @@ class ProgressWindow(val id: Long) : JFrame() {
         btnPauseResume.text = text("LBL_CLOSE")
         // It may have been disabled while finalizing, and Close must always work.
         btnPauseResume.isEnabled = true
-        btnHide.isVisible = false
         btnCancel.isVisible = false
         // Long messages need more lines than the progress layout has room for: grow, never shrink.
         validate()
@@ -237,7 +236,6 @@ class ProgressWindow(val id: Long) : JFrame() {
         dispose() // no-op if hideProgressWindow already disposed it; needed when it is no longer mapped (error state)
     }
 
-    private val btnHide = JButton(text("DWN_HIDE")).apply { addActionListener { hideWindow() } }
     private val btnMore = JButton().apply { addActionListener { setMore(!tableHolder.isVisible, remember = true) } }
     private val segModel = SegmentTableModel()
     private val tableHolder = JPanel(BorderLayout()).apply {
@@ -292,8 +290,6 @@ class ProgressWindow(val id: Long) : JFrame() {
             border = ScaledEmptyBorder(10, 15, 10, 15)
             add(btnMore)
             add(Box.createHorizontalGlue())
-            add(btnHide)
-            add(Box.createRigidArea(scaledSize(10, 10)))
             add(btnCancel)
             add(Box.createRigidArea(scaledSize(10, 10)))
             add(btnPauseResume)
