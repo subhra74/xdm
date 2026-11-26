@@ -1,6 +1,5 @@
 # The name of this language as listed in Settings, e.g. "Deutsch (German)"
 LANGUAGE_NAME=Hindi (हिन्दी)
-
 MENU_HELP_SUP=सहायता और समर्थन
 MENU_BATCH_DOWNLOAD=बैच डाउनलोड
 MENU_EXIT=बाहर निकलें
@@ -74,7 +73,6 @@ ERR_DECRYPT=वीडियो को डिक्रिप्ट करने �
 ERR_OUTPUT_WRITE=फ़ाइल सहेजने में असमर्थ.
 ERR_MUX=वीडियो खंडों को संयोजित करने में असमर्थ.
 ERR_HELP_LINK=और अधिक जानें
-
 TITLE_SETTINGS=सेटिंग्स
 SETTINGS_GENERAL=सामान्य
 SHOW_DWN_PRG=प्रगति विंडो दिखाएँ
@@ -86,7 +84,6 @@ LBL_OVERWRITE_EXISTING=मौजूदा फ़ाइलों को अधि
 LBL_TEMP_FOLDER=अस्थायी फोल्डर
 SETTINGS_FOLDER=डाउनलोड फ़ोल्डर
 MSG_MAX_DOWNLOAD=एक साथ डाउनलोड
-
 SETTINGS_SEC_BEHAVIOR=व्यवहार
 SETTINGS_SEC_FOLDERS=डिफ़ॉल्ट स्थान
 SETTINGS_SEC_APPEARANCE=उपस्थिति
@@ -99,11 +96,9 @@ SETTINGS_SEC_SECURITY=सुरक्षा
 SETTINGS_SEC_BROWSERS=समर्थित ब्राउज़र
 SETTINGS_SEC_FILETYPES=फ़ाइल प्रकार
 SETTINGS_SEC_EXCEPTIONS=साइट अपवाद
-
 SETTINGS_FOLDER_CHANGE=परिवर्तन
 SETTINGS_MONITORING=ब्राउज़र
 SETTINGS_NETWORK=नेटवर्क
-
 DESC_FILETYPES=फ़ाइल प्रकार
 DESC_VIDEOTYPES=वीडियो के प्रकार
 DESC_SITEEXCEPTIONS=अवरुद्ध साइटें
@@ -196,7 +191,6 @@ LBL_DELETE_FILE=डिस्क से फ़ाइलें हटाएँ
 LBL_GET_TIMESTAMP=सर्वर की फ़ाइल टाइमस्टैम्प का उपयोग करें
 LBL_SHOW_PROGRESS=प्रगति दिखाओ
 ND_DOWNLOAD=डाउनलोड करना
-
 CAT_FINISHED=पुरा होना।
 CAT_INCOMPLETE=अधूरा
 CAT_ALL=सभी डाउनलोड
@@ -210,7 +204,6 @@ CAT_COMPRESSED=दबा हुआ
 CAT_MUSIC=संगीत
 CAT_VIDEOS=वीडियो
 CAT_PROGRAMS=कार्यक्रमों
-
 CAT_SEC_CATEGORIES=फ़ाइल श्रेणियाँ
 CAT_DESC=ब्राउज़र डाउनलोड को उस श्रेणी में रखा जाता है जिसके नियम मेल खाते हैं; आप हमेशा दूसरा चुन सकते हैं.
 CAT_ADD=श्रेणी जोड़ना
@@ -225,17 +218,14 @@ MSG_CAT_NAME_MISSING=कृपया एक श्रेणी का नाम 
 MSG_CAT_FILE_TYPES_MISSING=कृपया कम से कम एक फ़ाइल प्रकार दर्ज करें.
 MSG_CAT_FOLDER_MISSING=कृपया इस श्रेणी के लिए एक फ़ोल्डर चुनें.
 MSG_CAT_DELETE_CONFIRM=यह श्रेणी हटाएं? मौजूदा डाउनलोड वहीं रहेंगे जहां वे हैं और कोई नहीं के अंतर्गत दिखाए जाएंगे।
-
 TOOL_SORT=क्रम से लगाना
 TOOL_DOWNLOAD=नया
 TOOL_CLEAR=स्पष्ट
 TOOL_SETTINGS=सेटिंग्स
 TOOL_DELETE=मिटाना
-
 ERR_NO_REFRESH=लिंक ताज़ा करने में असमर्थ
 SUCCESS_REFRESH=रिफ्रेश लिंक सफलता
 MSG_WAIT=इंतज़ार में
-
 MSG_MAX_SPLIT=प्रति डाउनलोड कनेक्शन
 MSG_MAX_RETRY=असफलता पर पुनः प्रयास करता है
 MSG_PROXY_HOST=मेज़बान
@@ -245,7 +235,6 @@ MSG_PROXY_PASS=पासवर्ड
 MSG_NO_PROXY=कोई प्रॉक्सी नहीं
 MSG_HTTP_PROXY=HTTP प्रॉक्सी
 MSG_SOCKS_PROXY=मोजे प्रॉक्सी
-
 MSG_ADV_TITLE=विकसित
 MSG_HALT=डाउनलोड समाप्त होने पर बंद करें
 MSG_AWAKE=कंप्यूटर को सक्रिय रखें
@@ -262,7 +251,6 @@ MSG_READ_TIMEOUT_HINT=रुके हुए कनेक्शन को पु
 MSG_IGNORE_CERT_ERRORS=प्रमाणपत्र त्रुटियों पर ध्यान न दें
 MSG_IGNORE_CERT_ERRORS_HINT=प्रमाणपत्र और होस्टनाम जांच छोड़ देता है।
 MSG_IGNORE_CERT_ERRORS_CONFIRM=XDM अब HTTPS प्रमाणपत्र या होस्टनाम सत्यापित नहीं करेगा। \n डाउनलोड की गई फ़ाइलों को बिना किसी चेतावनी के रोका या बदला जा सकता है। \n \n इसे केवल उन सर्वरों के लिए सक्षम करें जिन पर आप भरोसा करते हैं। जारी रखना?
-
 MSG_SHD_ONCE=वन टाइम
 MSG_SHD_WEEKLY=साप्ताहिक
 MSG_SHD_TYPE=प्रकार:

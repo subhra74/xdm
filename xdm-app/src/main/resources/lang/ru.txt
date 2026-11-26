@@ -430,3 +430,4 @@ CAT_FILE_TYPES_PLACEHOLDER=mp4, mkv, webm
 CAT_FOLDER_NEW_ONLY=Смена папки влияет только на новые загрузки.
 CAT_COLOR=Цвет
 CAT_COLOR_PICK=Выберите цвет категории
+SEARCH=Поиск
