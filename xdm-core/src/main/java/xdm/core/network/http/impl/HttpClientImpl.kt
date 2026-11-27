@@ -222,6 +222,11 @@ class HttpClientImpl @JvmOverloads constructor(
         val cookies: MutableSet<String> = LinkedHashSet()
 
         headers?.forEach { (name, value) ->
+            if (name.equals("Host", ignoreCase = true)) {
+                // OkHttp keeps a caller's `Host` as it is; a saved one (e.g. from a browser that reports it)
+                // may name another host than [url] and gets the request refused. OkHttp derives it from the URL.
+                return@forEach
+            }
             if (name.lowercase() == "cookie" && value.isNotEmpty()) {
                 cookies.add(value.first())
             } else {

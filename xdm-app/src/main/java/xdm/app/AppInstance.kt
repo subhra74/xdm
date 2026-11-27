@@ -43,6 +43,7 @@ import xdm.core.util.Logger
 import xdm.core.util.MovePhase
 import xdm.manager.BatchFileCounts
 import xdm.manager.DbRecord
+import xdm.manager.RecordStatus
 import java.awt.Desktop
 import java.awt.MenuItem
 import java.awt.PopupMenu
@@ -90,6 +91,12 @@ interface IAppInstance {
     fun showProgressWindow(id: Long, fileName: String)
 
     fun hideProgressWindow(id: Long)
+
+    /**
+     * The download session ended (finished, paused or stopped). Closes its progress window, except one
+     * whose own Pause button paused it: that one stays open with Resume ready.
+     */
+    fun progressSessionEnded(id: Long)
 
     fun showProgressError(id: Long, error: DownloadError)
 
@@ -290,13 +297,26 @@ class AppInstance : IAppInstance {
     override fun deleteDownloadInView(index: Int) {
         if (SwingUtilities.isEventDispatchThread()) {
             appWindow.deleteDownloadInView(index)
+            closeRemovedProgressWindows()
         } else {
-            SwingUtilities.invokeAndWait { appWindow.deleteDownloadInView(index) }
+            SwingUtilities.invokeAndWait {
+                appWindow.deleteDownloadInView(index)
+                closeRemovedProgressWindows()
+            }
         }
     }
 
+    /** A paused download's window stays open (see [progressSessionEnded]): close it once the download is deleted. */
+    private fun closeRemovedProgressWindows() {
+        val gone = prgWndMap.keys.filter { db.getById(it) == null }
+        gone.forEach { prgWndMap.remove(it)?.dispose() }
+    }
+
     override fun downloadsRemovedInView() {
-        runOnUIThread { appWindow.downloadsRemovedInView() }
+        runOnUIThread {
+            appWindow.downloadsRemovedInView()
+            closeRemovedProgressWindows()
+        }
     }
 
     override fun addDownloadInView(id: Long) {
@@ -381,6 +401,8 @@ class AppInstance : IAppInstance {
             if (isTorrent(id)) return@invokeLater showTorrentProgress(id)
             var prgWnd = prgWndMap[id]
             if (prgWnd != null) {
+                // Resumed from its own Resume button, or from the list while it sat paused: Pause again.
+                if (prgWnd.isPaused && db.getById(id)?.status == RecordStatus.DOWNLOADING) prgWnd.showStarted()
                 prgWnd.isVisible = true
             } else {
                 prgWnd = ProgressWindow(id).apply {
@@ -445,6 +467,18 @@ class AppInstance : IAppInstance {
             wnd?.isVisible = false
             wnd?.dispose()
             torrentProgress.remove(id)?.dispose()
+        }
+    }
+
+    override fun progressSessionEnded(id: Long) {
+        runOnUIThread {
+            val wnd = prgWndMap[id]
+            // The status check: a download that finished before the stop took effect still closes its window.
+            if (wnd != null && wnd.isPausePending && db.getById(id)?.status == RecordStatus.PAUSED) {
+                wnd.showPaused()
+            } else {
+                hideProgressWindow(id)
+            }
         }
     }
 

@@ -60,7 +60,7 @@ internal object LinuxPlaces {
     }
 
     private fun files(jdk: Array<File>): Array<File> {
-        val config = System.getenv("XDG_CONFIG_HOME")?.takeIf { it.isNotBlank() }?.let(::File) ?: File(home, ".config")
+        val config = XdgUserDirs.configHome(home, System::getenv)
         val userDirs = read(File(config, "user-dirs.dirs"))?.let { userDirs(it, home) }.orEmpty()
         val bookmarks = read(File(config, "gtk-3.0/bookmarks"))?.let(::gtkBookmarks).orEmpty()
         val mounted = currentRemovableMounts(System.getProperty("user.name"))
@@ -83,24 +83,8 @@ internal object LinuxPlaces {
      * to home itself means "none" there and is left out.
      */
     fun userDirs(text: String, home: File): List<File> {
-        val dirs = text.lineSequence()
-            .map { it.trim() }
-            .filter { it.startsWith("XDG_") && it.contains('=') }
-            .associate { line ->
-                val key = line.substringBefore('=').removePrefix("XDG_").removeSuffix("_DIR")
-                val value = line.substringAfter('=').trim().removeSurrounding("\"").replace("\\\"", "\"")
-                key to value
-            }
-        return userDirKeys.mapNotNull { key ->
-            val value = dirs[key] ?: return@mapNotNull null
-            val file = when {
-                value == "\$HOME" -> home
-                value.startsWith("\$HOME/") -> File(home, value.removePrefix("\$HOME/"))
-                value.startsWith("/") -> File(value)
-                else -> return@mapNotNull null
-            }
-            file.takeIf { it.path != home.path }
-        }
+        val dirs = XdgUserDirs.parse(text, home)
+        return userDirKeys.mapNotNull { dirs[it] }
     }
 
     /** `file:///path Label` lines of GTK's `bookmarks`; other schemes (sftp, smb) are left out. */

@@ -23,9 +23,16 @@ object CaptureHandler {
     private const val PREVIEW_TIMEOUT_MS = 8_000L
 
     private val clearTabFilter = ClearTabFilter()
+
+    /**
+     * `host` belongs to the URL it was sent to, not to the page: Firefox reports it (Chrome does not),
+     * and a variant playlist or segment on another CDN host fetched with the master's `Host` is refused
+     * (CloudFront 403). The HTTP client sets the right one for each URL.
+     */
     private val blockedHeaders = setOf(
         "accept",
 //        "authorization",
+        "host",
         "connection",
         "expect",
         "te",

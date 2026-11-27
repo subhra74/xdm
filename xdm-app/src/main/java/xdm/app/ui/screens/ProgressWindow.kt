@@ -48,7 +48,7 @@ import javax.swing.table.DefaultTableCellRenderer
  *          Download 46%            68.9 MB / 150.0 MB
  *          ▮▮▮▮▯▮▮▯▯▮▯▯   (segments)
  *          Speed 4.2 MB/s                 19 sec left
- * [Less]                                 [Hide] [Pause]
+ * [Less]                               [Cancel] [Pause]
  *  #  Status        Downloaded     (a row per connection, numbered 1..n)
  * ```
  *
@@ -56,6 +56,10 @@ import javax.swing.table.DefaultTableCellRenderer
  * ([xdm.app.IAppConfig.progressMore]). The table has a row per connection slot, which the download's progress
  * tracker keeps ([xdm.core.downloaders.web.ConnectionSlots]): never more rows than the most segments live at
  * once, each with the bytes of every segment that used it; the bar above shows all the segments.
+ *
+ * Pause keeps the window open: the button turns into a disabled Resume until the download has really
+ * paused ([showPaused], from the paused event), then Resume starts it again in the same window ([showStarted]).
+ * Cancel stops the download and closes the window at once.
  */
 class ProgressWindow(val id: Long) : JFrame() {
     private companion object {
@@ -74,6 +78,17 @@ class ProgressWindow(val id: Long) : JFrame() {
             }.getOrNull()
         }
     }
+
+    /** Where the download stands as far as the Pause/Resume button is concerned. */
+    private enum class RunState { RUNNING, PAUSING, PAUSED, RESUMING }
+
+    private var runState = RunState.RUNNING
+
+    /** Pause was clicked here and the paused event has not arrived yet: that event keeps this window open. */
+    val isPausePending: Boolean get() = runState == RunState.PAUSING
+
+    /** Paused, or resumed but not started yet (queued): the window has no running download. */
+    val isPaused: Boolean get() = runState == RunState.PAUSED || runState == RunState.RESUMING
 
     private var isError: Boolean = false
     fun showError(error: DownloadError) {
@@ -95,7 +110,7 @@ class ProgressWindow(val id: Long) : JFrame() {
         btnPauseResume.text = text("LBL_CLOSE")
         // It may have been disabled while finalizing, and Close must always work.
         btnPauseResume.isEnabled = true
-        btnHide.isVisible = false
+        btnCancel.isVisible = false
         // Long messages need more lines than the progress layout has room for: grow, never shrink.
         validate()
         val needed = preferredSize.height
@@ -115,7 +130,7 @@ class ProgressWindow(val id: Long) : JFrame() {
         lblStat1.text = status
         lblStat3.text = ""
         lblStat4.text = ""
-        btnPauseResume.isEnabled = phase != MovePhase.FINALIZING
+        btnPauseResume.isEnabled = runState == RunState.RUNNING && phase != MovePhase.FINALIZING
         this.prg.value = prg
         windowProgressTaskbar?.setWindowProgressValue(this, prg)
     }
@@ -131,6 +146,8 @@ class ProgressWindow(val id: Long) : JFrame() {
         slots: List<SlotProgress>,
         files: BatchFileCounts? = null,
     ) {
+        // A late update from the stopped session must not overwrite the paused state.
+        if (isPaused) return
         // Muxing reports progress through the same call, with [prg] as the assembling percent and no segments.
         val record = synchronized(AppContext.db) { AppContext.db.getById(id) }
         val assembling = record?.status == RecordStatus.ASSEMBLING
@@ -183,6 +200,25 @@ class ProgressWindow(val id: Long) : JFrame() {
         windowProgressTaskbar?.setWindowProgressValue(this, prg)
     }
 
+    /** The download has really paused (its paused event): Resume is ready. */
+    fun showPaused() {
+        runState = RunState.PAUSED
+        lblStat.text = text("STAT_PAUSED")
+        lblStat1.text = text("STAT_PAUSED")
+        lblStat3.text = "Speed ---"
+        lblStat4.text = "---"
+        btnPauseResume.text = text("MENU_RESUME")
+        btnPauseResume.isEnabled = true
+    }
+
+    /** A download session started in this window (a resume, or the first start): the button pauses again. */
+    fun showStarted() {
+        if (isError) return
+        runState = RunState.RUNNING
+        btnPauseResume.text = text("MENU_PAUSE")
+        btnPauseResume.isEnabled = true
+    }
+
     /** The bar and the table; an update without them (assembling, muxing) keeps the last ones. */
     fun showSegments(segData: Collection<SegmentProgress>, slots: List<SlotProgress>) {
         if (segData.isNotEmpty()) segPanel.setValues(segData)
@@ -200,7 +236,6 @@ class ProgressWindow(val id: Long) : JFrame() {
         dispose() // no-op if hideProgressWindow already disposed it; needed when it is no longer mapped (error state)
     }
 
-    private val btnHide = JButton(text("DWN_HIDE")).apply { addActionListener { hideWindow() } }
     private val btnMore = JButton().apply { addActionListener { setMore(!tableHolder.isVisible, remember = true) } }
     private val segModel = SegmentTableModel()
     private val tableHolder = JPanel(BorderLayout()).apply {
@@ -210,7 +245,8 @@ class ProgressWindow(val id: Long) : JFrame() {
         preferredSize = Dimension(10.px, (MORE_HEIGHT - 10).px)
         minimumSize = Dimension(10.px, 40.px)
     }
-    private val btnPauseResume = JButton(text("MENU_PAUSE")).apply { addActionListener { pauseDownload() } }
+    private val btnPauseResume = JButton(text("MENU_PAUSE")).apply { addActionListener { pauseOrResume() } }
+    private val btnCancel = JButton(text("ND_CANCEL")).apply { addActionListener { cancelDownload() } }
     val prg = CircularProgress().apply {
         value = 0
         preferredSize = scaledSize(80, 80)
@@ -254,7 +290,7 @@ class ProgressWindow(val id: Long) : JFrame() {
             border = ScaledEmptyBorder(10, 15, 10, 15)
             add(btnMore)
             add(Box.createHorizontalGlue())
-            add(btnHide)
+            add(btnCancel)
             add(Box.createRigidArea(scaledSize(10, 10)))
             add(btnPauseResume)
             // No band of its own: the buttons and the table sit on the window's background.
@@ -397,17 +433,38 @@ class ProgressWindow(val id: Long) : JFrame() {
         padColumns()
     }
 
-    private fun pauseDownload() {
+    private fun pauseOrResume() {
         if (isError) {
             dispose()
             return
         }
-        synchronized(AppContext.db) {
-            AppContext.db.getById(id)?.let { e ->
-                AppMenuHandler.pauseDownload(e)
+        when (runState) {
+            RunState.RUNNING -> {
+                // Disabled until the paused event arrives (AppInstance.progressSessionEnded → showPaused).
+                runState = RunState.PAUSING
+                btnPauseResume.text = text("MENU_RESUME")
+                btnPauseResume.isEnabled = false
+                record()?.let { AppMenuHandler.pauseDownload(it) }
             }
+            RunState.PAUSED -> {
+                // Disabled until the session starts (AppInstance.showProgressWindow → showStarted); it may wait in the queue.
+                runState = RunState.RESUMING
+                btnPauseResume.isEnabled = false
+                record()?.let { AppMenuHandler.resumeDownload(it) }
+                // The session will not show a progress window, so this one would never hear that it started.
+                if (!AppContext.config.showDownloadProgressWindow) hideWindow()
+            }
+            RunState.PAUSING, RunState.RESUMING -> {}
         }
     }
+
+    /** Stops the download (unless it is already paused) and closes the window without waiting. */
+    private fun cancelDownload() {
+        if (runState == RunState.RUNNING || runState == RunState.RESUMING) record()?.let { AppMenuHandler.pauseDownload(it) }
+        hideWindow()
+    }
+
+    private fun record() = synchronized(AppContext.db) { AppContext.db.getById(id) }
 
     /** `Files: 1,234 / 5,000 · 3 failed`, the failed part only when there are failures. */
     private fun batchFilesText(files: BatchFileCounts): String {

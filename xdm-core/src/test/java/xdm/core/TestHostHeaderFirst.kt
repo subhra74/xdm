@@ -82,6 +82,22 @@ class TestHostHeaderFirst {
         )
     }
 
+    /**
+     * A caller's `Host` (Firefox reports it; saved with a master playlist on another CDN host) is never sent:
+     * the request carries the URL's own, once. A CDN refused (403) a variant fetched with the master's `Host`.
+     */
+    @Test
+    fun callersHost_isReplacedByTheUrlsOwn() {
+        val s = server(ok)
+        val client = HttpClientImpl(1).also { clients.add(it) }
+        val headers = linkedMapOf("Host" to listOf("master.example")) + browserHeaders
+        assertEquals(200, client.getResponse("http://127.0.0.1:${s.port}/v.m3u8", headers, null, null).getOrThrow().use { it.statusCode }, "status")
+        val head = s.requests.single()
+        val hosts = head.filter { it.startsWith("Host:", ignoreCase = true) }
+        assertEquals(listOf("Host: 127.0.0.1:${s.port}"), hosts, "only the URL's own Host")
+        assertEquals("Host: 127.0.0.1:${s.port}", head[1], "Host right after the request line")
+    }
+
     @Test
     fun redirectToAnotherHost_getsItsOwnHostFirst() {
         val target = server(ok)
