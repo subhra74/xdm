@@ -4,7 +4,7 @@ import xdm.app.utils.linux.dbus.Variant
 import xdm.core.util.Logger
 
 /**
- * Blocks idle system suspend through the XDG desktop portal (`org.freedesktop.portal.Inhibit`), Linux only.
+ * Blocks idle system suspend through the XDG desktop portal (`org.freedesktop.portal.Inhibit`), Linux and BSD.
  * Works the same for a deb/rpm install and inside a Flatpak, where `systemd-inhibit` does not exist. The
  * portal backend (GNOME's, KDE's, the GTK one) passes the request to the session (gnome-session,
  * PowerDevil); only the suspend flag is set, so the display can still blank. The portal drops the

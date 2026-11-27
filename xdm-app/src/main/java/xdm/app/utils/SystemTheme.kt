@@ -33,7 +33,7 @@ internal object SystemTheme {
         when (detectOS()) {
             OS.Windows -> windowsIsDark(Win32Registry.getDword(PERSONALIZE, "AppsUseLightTheme"))
             OS.MacOS -> macIsDark(macInterfaceStyle())
-            OS.Linux -> portalIsDark(portalSetting(APPEARANCE, "color-scheme") as? Number) {
+            OS.Linux, OS.BSD -> portalIsDark(portalSetting(APPEARANCE, "color-scheme") as? Number) {
                 portalSetting(GNOME_INTERFACE, "gtk-theme") as? String
             }
         }

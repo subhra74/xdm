@@ -63,6 +63,16 @@ class YtDlpToolsTest {
     }
 
     @Test
+    fun bsdFindsThePackagedToolInUsrLocalBin() {
+        val packaged = File("/usr/local/bin/yt-dlp")
+        val found = ExternalTools.lookup(
+            ExternalTool.YT_DLP, "", File(dir, "tools"), OS.BSD, null, dir.path, { null }, { it == packaged },
+        )
+        assertEquals(packaged.absolutePath, found?.path)
+        assertEquals(ToolOrigin.SYSTEM, found?.origin)
+    }
+
+    @Test
     fun versionsAreReadFromEachToolsOutput() {
         assertEquals("2026.10.26", ExternalTools.parseVersion(ExternalTool.YT_DLP, "2026.10.26\n"))
         assertEquals("2.9.8", ExternalTools.parseVersion(ExternalTool.DENO, "deno 2.9.8 (stable, release, aarch64-apple-darwin)\nv8 14"))
@@ -71,7 +81,9 @@ class YtDlpToolsTest {
     @Test
     fun everyPlatformHasAnAsset() {
         for (os in OS.entries) for (arch in Arch.entries) for (tool in ExternalTool.entries) {
-            assertTrue(ToolSources.of(tool, os, arch) != null, "$tool on $os $arch")
+            // No official BSD builds: the system's own copy is used there.
+            if (os == OS.BSD) assertNull(ToolSources.of(tool, os, arch), "$tool on $os $arch")
+            else assertTrue(ToolSources.of(tool, os, arch) != null, "$tool on $os $arch")
         }
         assertEquals("yt-dlp_macos", ToolSources.of(ExternalTool.YT_DLP, OS.MacOS, Arch.ARM64)!!.asset)
         assertEquals("deno-aarch64-pc-windows-msvc.zip", ToolSources.of(ExternalTool.DENO, OS.Windows, Arch.ARM64)!!.asset)

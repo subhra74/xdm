@@ -30,7 +30,7 @@ object AppDirs {
                 ?.let(::File) ?: File(home)
             OS.MacOS -> File(home, "Library/Application Support")
             // The XDG spec ignores a relative XDG_DATA_HOME.
-            OS.Linux -> env("XDG_DATA_HOME")?.takeIf { File(it).isAbsolute }?.let(::File)
+            OS.Linux, OS.BSD -> env("XDG_DATA_HOME")?.takeIf { File(it).isAbsolute }?.let(::File)
                 ?: File(home, ".local/share")
         }
         return File(base, NAME)

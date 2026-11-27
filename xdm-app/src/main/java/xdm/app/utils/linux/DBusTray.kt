@@ -13,7 +13,7 @@ import javax.swing.SwingUtilities
 import kotlin.system.exitProcess
 
 /**
- * The Linux tray icon as a D-Bus StatusNotifierItem with a `com.canonical.dbusmenu` menu: what KDE
+ * The Linux and BSD tray icon as a D-Bus StatusNotifierItem with a `com.canonical.dbusmenu` menu: what KDE
  * Plasma, Cinnamon, Xfce/LXQt panels, waybar and GNOME's AppIndicator extension show. Unlike
  * `java.awt.SystemTray` (XEmbed) it also works under the JetBrains Runtime's Wayland toolkit, which has
  * no AWT tray at all (PACKAGING.md §7.6, §7.7).

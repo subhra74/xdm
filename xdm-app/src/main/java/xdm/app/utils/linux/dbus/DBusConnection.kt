@@ -235,7 +235,7 @@ class DBusConnection private constructor(private val channel: SocketChannel) : C
             writeLine(channel, "BEGIN")
         }
 
-        /** `/proc/self` belongs to us on Linux; elsewhere (a test bus on macOS) a new file does. */
+        /** `/proc/self` belongs to us on Linux; elsewhere (BSD without procfs, macOS) a new file does. */
         private fun currentUid(): Int = runCatching { Files.getAttribute(Path.of("/proc/self"), "unix:uid") as Int }
             .getOrElse {
                 val probe = Files.createTempFile("xdm-uid", null)

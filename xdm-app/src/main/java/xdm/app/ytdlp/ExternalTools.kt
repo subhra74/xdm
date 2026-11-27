@@ -83,7 +83,8 @@ object ExternalTools {
                 dirs.add(File("/opt/homebrew/bin")); dirs.add(File("/usr/local/bin"))
             }
 
-            OS.Linux -> {
+            // The BSDs' packages (yt-dlp, deno, ffmpeg) install into /usr/local/bin.
+            OS.Linux, OS.BSD -> {
                 dirs.add(File(home, ".local/bin")); dirs.add(File("/usr/local/bin")); dirs.add(File("/usr/bin"))
             }
 
